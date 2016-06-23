@@ -1,0 +1,40 @@
+﻿<Page
+    x:Class="Client.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Client"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" d:DataContext="{d:DesignInstance local:Person}">
+        <TextBox Header="First name" x:Name="firstName" HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="204" Text="{Binding FirstName.Value, Mode=TwoWay}"/>
+        <TextBox Header="Last name" x:Name="lastName" HorizontalAlignment="Left" Margin="12,89,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="202" Text="{Binding LastName.Value, Mode=TwoWay}"/>
+        <TextBox Header="Full name" x:Name="fullName" HorizontalAlignment="Left" Margin="12,182,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="300" Text="{Binding FullName.Value, Mode=OneWay}" IsReadOnly="True"/>
+        <TextBox Header="Name is OK" x:Name="isNameOk" HorizontalAlignment="Left" Margin="334,182,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="121" Text="{Binding IsNameValid.Value, Mode=TwoWay}" IsReadOnly="True"/>
+        <TextBox Header="City" x:Name="city" HorizontalAlignment="Left" Margin="12,305,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="173" Text="{Binding City.Current.Value, Mode=TwoWay}"/>
+        <TextBox Header="City is OK" x:Name="isCityOk" HorizontalAlignment="Left" Margin="211,305,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="121" Text="{Binding City.IsValid.Value, Mode=TwoWay}" IsReadOnly="True"/>
+        <Button x:Name="cityAccept" Content="Accept" HorizontalAlignment="Left" Margin="358,333,0,0" VerticalAlignment="Top" Command="{Binding CityAccept, Mode=OneWay}"/>
+        <Button x:Name="cityRevert" Content="Revert" HorizontalAlignment="Left" Margin="428,333,0,0" VerticalAlignment="Top" Command="{Binding CityRevert, Mode=OneWay}"/>
+        <Button x:Name="longAction" Content="Long Task" HorizontalAlignment="Left" Margin="12,395,0,0" VerticalAlignment="Top" Command="{Binding LongTask, Mode=OneWay}"/>
+        <Button x:Name="createRandomNumber" Command="{Binding CreateRandomNumber}" HorizontalAlignment="Left" Margin="12,456,0,0" VerticalAlignment="Top">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock>Create random number</TextBlock>
+                <TextBlock Margin="10,0,0,0" FontWeight="Bold" Text="{Binding Path=RandomNumber.Value}"></TextBlock>
+            </StackPanel>
+        </Button>
+        <TextBlock x:Name="textBlock" HorizontalAlignment="Left" Margin="398,407,0,0" TextWrapping="Wrap" Text="{Binding Clock.Value}" VerticalAlignment="Top"/>
+        <Button x:Name="addNickname" Content="Add Nickname" HorizontalAlignment="Left" Margin="872,127,0,0" VerticalAlignment="Top" Command="{Binding AddNickname, Mode=OneWay}"/>
+        <TextBox Header="Nickname to add" x:Name="nicknameToAdd" HorizontalAlignment="Left" Margin="625,99,0,0" TextWrapping="Wrap" Text="{Binding NicknameToAdd.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top" Width="242"/>
+        <ListView x:Name="nicknameList" HorizontalAlignment="Left" Height="363" Margin="624,182,0,0" VerticalAlignment="Top" Width="550" ItemsSource="{Binding Nicknames}">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Name,Mode=OneWay}"></TextBlock>
+                        <Button Command="{Binding Delete,Mode=OneWay}">Delete</Button>
+                    </StackPanel>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</Page>
