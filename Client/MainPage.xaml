@@ -6,35 +6,37 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
+    <Page.Resources>
+        <local:BoolToColorConverter x:Key="boolToColorConverter" TrueBrush="#FFF40000" FalseBrush="#FF787878"/>
+    </Page.Resources>
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" d:DataContext="{d:DesignInstance local:Person}">
         <TextBox Header="First name" x:Name="firstName" HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="204" Text="{Binding FirstName.Value, Mode=TwoWay}"/>
         <TextBox Header="Last name" x:Name="lastName" HorizontalAlignment="Left" Margin="12,89,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="202" Text="{Binding LastName.Value, Mode=TwoWay}"/>
-        <TextBox Header="Full name" x:Name="fullName" HorizontalAlignment="Left" Margin="12,182,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="300" Text="{Binding FullName.Value, Mode=OneWay}" IsReadOnly="True"/>
-        <TextBox Header="Name is OK" x:Name="isNameOk" HorizontalAlignment="Left" Margin="334,182,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="121" Text="{Binding IsNameValid.Value, Mode=TwoWay}" IsReadOnly="True"/>
-        <TextBox Header="City" x:Name="city" HorizontalAlignment="Left" Margin="12,305,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="173" Text="{Binding City.Current.Value, Mode=TwoWay}"/>
-        <TextBox Header="City is OK" x:Name="isCityOk" HorizontalAlignment="Left" Margin="211,305,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="121" Text="{Binding City.IsValid.Value, Mode=TwoWay}" IsReadOnly="True"/>
-        <Button x:Name="cityAccept" Content="Accept" HorizontalAlignment="Left" Margin="358,333,0,0" VerticalAlignment="Top" Command="{Binding CityAccept, Mode=OneWay}"/>
-        <Button x:Name="cityRevert" Content="Revert" HorizontalAlignment="Left" Margin="428,333,0,0" VerticalAlignment="Top" Command="{Binding CityRevert, Mode=OneWay}"/>
-        <Button x:Name="longAction" Content="Long Task" HorizontalAlignment="Left" Margin="12,395,0,0" VerticalAlignment="Top" Command="{Binding LongTask, Mode=OneWay}"/>
-        <Button x:Name="createRandomNumber" Command="{Binding CreateRandomNumber}" HorizontalAlignment="Left" Margin="12,456,0,0" VerticalAlignment="Top">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock>Create random number</TextBlock>
-                <TextBlock Margin="10,0,0,0" FontWeight="Bold" Text="{Binding Path=RandomNumber.Value}"></TextBlock>
-            </StackPanel>
-        </Button>
-        <TextBlock x:Name="textBlock" HorizontalAlignment="Left" Margin="398,407,0,0" TextWrapping="Wrap" Text="{Binding Clock.Value}" VerticalAlignment="Top"/>
+        <TextBox Header="Full name" x:Name="fullName" HorizontalAlignment="Left" Margin="12,166,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="300" Text="{Binding FullName.Value, Mode=OneWay}" IsReadOnly="True"/>
         <Button x:Name="addNickname" Content="Add Nickname" HorizontalAlignment="Left" Margin="872,127,0,0" VerticalAlignment="Top" Command="{Binding AddNickname, Mode=OneWay}"/>
         <TextBox Header="Nickname to add" x:Name="nicknameToAdd" HorizontalAlignment="Left" Margin="625,99,0,0" TextWrapping="Wrap" Text="{Binding NicknameToAdd.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top" Width="242"/>
-        <ListView x:Name="nicknameList" HorizontalAlignment="Left" Height="363" Margin="624,182,0,0" VerticalAlignment="Top" Width="550" ItemsSource="{Binding Nicknames}">
+        <ListView x:Name="nicknameList" HorizontalAlignment="Left" Height="363" Margin="624,182,0,0" VerticalAlignment="Top" Width="550" ItemsSource="{Binding Nicknames.Value}">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{Binding Name,Mode=OneWay}"></TextBlock>
+                        <TextBlock Text="{Binding Name, Mode=OneWay}"></TextBlock>
                         <Button Command="{Binding Delete,Mode=OneWay}">Delete</Button>
                     </StackPanel>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
+        <Rectangle x:Name="firstNameError" Fill="{Binding FirstName.HasErrors, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="219,44,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
+        <Rectangle x:Name="lastNameError" Fill="{Binding LastName.HasErrors, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="219,125,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
+        <Rectangle x:Name="fullNameError" Fill="{Binding FullName.HasErrors, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="317,202,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
+        <CheckBox x:Name="isMarried" Content="Is married?" HorizontalAlignment="Left" Margin="12,258,0,0" VerticalAlignment="Top" IsChecked="{Binding IsMarried.Value, Mode=TwoWay}"/>
+        <TextBox Header="Marriage year" x:Name="marriageYear" HorizontalAlignment="Left" Margin="40,295,0,0" TextWrapping="Wrap" Text="{Binding MarriageYear.Value, Mode=TwoWay}" VerticalAlignment="Top" Width="174" IsEnabled="{Binding MarriageYear.IsEnabled}"/>
+        <Rectangle x:Name="marriageYearValidator" Fill="{Binding MarriageYear.HasErrors, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="232,331,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
+        <Button x:Name="acceptName" Content="Accept" HorizontalAlignment="Left" Margin="414,202,0,0" VerticalAlignment="Top" Command="{Binding AcceptName, Mode=OneWay}"/>
+        <Button x:Name="rejectName" Content="Reject" HorizontalAlignment="Left" Margin="484,202,0,0" VerticalAlignment="Top" Command="{Binding RejectName, Mode=OneWay}"/>
+        <Rectangle x:Name="nicknameListErrors" Fill="{Binding Nicknames.HasErrors, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="1014,125,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
+        <Button x:Name="acceptAllButton" Content="Accept All" HorizontalAlignment="Left" Margin="104,513,0,0" VerticalAlignment="Top" Width="190" Command="{Binding AcceptAll, Mode=OneWay}"/>
+        <Button x:Name="rejectAllButton" Content="Reject All" HorizontalAlignment="Left" Margin="317,513,0,0" VerticalAlignment="Top" Width="227" Command="{Binding RejectAll, Mode=OneWay}"/>
+        <Rectangle x:Name="allErrorsSummary" Fill="{Binding HasErrors, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="264,558,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
     </Grid>
 </Page>

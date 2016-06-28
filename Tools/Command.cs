@@ -49,7 +49,7 @@ namespace Tools {
                 .RefCount();
             _canExecuteSubscription =
                 _canExecute
-                .ObserveOn(DefaultScheduler.Instance) // UI hangs without this
+                //.ObserveOn(DefaultScheduler.Instance) // UI hangs without this, maybe just if task uses background thread, like Task.Delay?
                 .Subscribe((i) => OnCanExecuteChanged(EventArgs.Empty));
             _results =
                 _progressSynchronized

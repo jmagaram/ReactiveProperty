@@ -6,6 +6,7 @@ using System.Reactive.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Tools;
+using Windows.ApplicationModel;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
@@ -33,10 +34,12 @@ namespace Client {
 
         protected override void OnNavigatedTo(NavigationEventArgs e) {
             base.OnNavigatedTo(e);
+            if (!Windows.ApplicationModel.DesignMode.DesignModeEnabled) {
             p = new Person();
             p.FirstName.Value = "Justin";
             p.LastName.Value = "Magaram";
             DataContext = p;
+            }
         }
     }
 }
