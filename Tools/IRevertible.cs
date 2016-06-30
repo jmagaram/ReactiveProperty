@@ -5,8 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Tools {
-    public interface IRevertible {
-        bool IsChanged { get; }
+    public interface IRevertible : ITrackChanges {
         void AcceptChanges();
         void RejectChanges();
     }

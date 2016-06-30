@@ -1,20 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Reactive.Subjects;
-using System.Text;
 
 namespace Tools {
-    public class CalculatedProperty<TValue,TError> : Property<TValue,TError> {
-        public CalculatedProperty(TValue initialValue, IObservable<TValue> values) : base(value: initialValue) {
-            values.Subscribe((i) => base.Value = i);
+    public class CalculatedProperty<T> : PropertyBase<T> {
+        public CalculatedProperty(IObservable<T> values, T defaultValue = default(T)) : base(defaultValue) {
+            values
+                .Subscribe(i => Value = i)
+                .AddTo(Disposables);
         }
 
-        public new TValue Value
+        public new T Value
         {
             get { return base.Value; }
-            private set { throw new NotImplementedException(); }
+            private set { base.Value = value; }
         }
     }
 }

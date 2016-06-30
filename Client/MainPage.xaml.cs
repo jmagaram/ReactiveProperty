@@ -38,6 +38,9 @@ namespace Client {
             p = new Person();
             p.FirstName.Value = "Justin";
             p.LastName.Value = "Magaram";
+                if (p.NicknameToAdd.Value==null) {
+                    ;
+                }
             DataContext = p;
             }
         }

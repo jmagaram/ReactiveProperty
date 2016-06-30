@@ -6,6 +6,6 @@ using System.Threading.Tasks;
 
 namespace Tools {
     public interface ITrackChanges {
-        bool HasChanges { get; }
+        IReadOnlyProperty<bool> HasChanges { get; }
     }
 }
