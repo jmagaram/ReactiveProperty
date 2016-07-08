@@ -2,7 +2,7 @@
 using System.ComponentModel;
 
 namespace Tools {
-    public interface IReadOnlyProperty<T> : IObservable<T>, INotifyPropertyChanged, IDisposable {
+    public interface IReadOnlyProperty<out T> : IObservable<T>, INotifyPropertyChanged, IDisposable {
         T Value { get; }
     }
 }

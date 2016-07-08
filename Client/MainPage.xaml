@@ -7,9 +7,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
     <Page.Resources>
-        <local:BoolToColorConverter x:Key="boolToColorConverter" TrueBrush="#FFF40000" FalseBrush="#FF787878"/>
+        <local:BoolToColorConverter x:Key="boolToColorConverter" NullBrush="Yellow" TrueBrush="#FFF40000" FalseBrush="#FF787878"/>
     </Page.Resources>
-
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" d:DataContext="{d:DesignInstance local:Person}">
         <TextBox Header="First name" x:Name="firstName" HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="204" Text="{Binding FirstName.Value, Mode=TwoWay}"/>
         <TextBox Header="Last name" x:Name="lastName" HorizontalAlignment="Left" Margin="12,89,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="202" Text="{Binding LastName.Value, Mode=TwoWay}"/>
@@ -26,15 +25,15 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
-        <Rectangle x:Name="firstNameError" Fill="{Binding FirstName.HasErrors.Value, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="219,44,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
-        <Rectangle x:Name="lastNameError" Fill="{Binding LastName.HasErrors.Value, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="219,125,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
-        <Rectangle x:Name="fullNameError" Fill="{Binding FullName.HasErrors.Value, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="317,202,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
+        <Rectangle x:Name="firstNameError" Fill="{Binding FirstName.Errors.Value.HasErrors, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="219,44,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
+        <Rectangle x:Name="lastNameError" Fill="{Binding LastName.Errors.Value.HasErrors, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="219,125,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
+        <Rectangle x:Name="fullNameError" Fill="{Binding FullName.Errors.Value.HasErrors, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="317,202,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
         <CheckBox x:Name="isMarried" Content="Is married?" HorizontalAlignment="Left" Margin="12,258,0,0" VerticalAlignment="Top" IsChecked="{Binding IsMarried.Value, Mode=TwoWay}"/>
         <TextBox Header="Marriage year" x:Name="marriageYear" HorizontalAlignment="Left" Margin="40,295,0,0" TextWrapping="Wrap" Text="{Binding MarriageYear.Value, Mode=TwoWay}" VerticalAlignment="Top" Width="174" IsEnabled="{Binding MarriageYear.IsEnabled.Value}"/>
-        <Rectangle x:Name="marriageYearValidator" Fill="{Binding MarriageYear.HasErrors.Value, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="232,331,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
+        <Rectangle x:Name="marriageYearValidator" Fill="{Binding MarriageYear.Errors.Value.HasErrors, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="232,331,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
         <Button x:Name="acceptName" Content="Accept" HorizontalAlignment="Left" Margin="414,202,0,0" VerticalAlignment="Top" Command="{Binding AcceptName, Mode=OneWay}"/>
         <Button x:Name="rejectName" Content="Reject" HorizontalAlignment="Left" Margin="484,202,0,0" VerticalAlignment="Top" Command="{Binding RejectName, Mode=OneWay}"/>
-        <Rectangle x:Name="nicknameListErrors" Fill="{Binding Nicknames.HasErrors.Value, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="1014,125,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
+        <Rectangle x:Name="nicknameListErrors" Fill="{Binding NicknameToAdd.Errors.Value.HasErrors, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="1014,125,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
         <Button x:Name="acceptAllButton" Content="Accept All" HorizontalAlignment="Left" Margin="104,513,0,0" VerticalAlignment="Top" Width="190" Command="{Binding AcceptAll, Mode=OneWay}"/>
         <Button x:Name="rejectAllButton" Content="Reject All" HorizontalAlignment="Left" Margin="317,513,0,0" VerticalAlignment="Top" Width="227" Command="{Binding RejectAll, Mode=OneWay}"/>
     </Grid>

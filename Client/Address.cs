@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 using Tools;
 
 namespace Client {
-    public class Address {
-        public Address() {
+    //public class Address {
+    //    public Address() {
 
-        }
-        Property<string, StringError> Street { get; }
-        Property<string, StringError> City { get; }
-    }
+    //    }
+    //    Property<string, StringError> Street { get; }
+    //    Property<string, StringError> City { get; }
+    //}
 
     // read-only version
     //IValidationErrorData<TError>, ITrackChanges, INotifyPropertyChanged, IDisposable

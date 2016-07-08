@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Tools {
     public class CalculatedProperty<T> : PropertyBase<T> {
@@ -15,3 +17,16 @@ namespace Tools {
         }
     }
 }
+
+// calculated
+// validatable
+// editable
+// revertible
+
+// editable  , revertible, validatable
+// calculated, validatable
+//
+// Propertybase
+//   ValidatablePropertyBase
+//     editable, revertible
+//     calculated

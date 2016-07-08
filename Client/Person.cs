@@ -15,6 +15,7 @@ using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Reactive.Concurrency;
 using System.Threading;
+using System.Diagnostics;
 
 namespace Client {
     public class Person {
@@ -33,21 +34,24 @@ namespace Client {
 
         public Person() {
             _firstName = new Property<string, StringError>(
-                value: string.Empty,
+                defaultValue: string.Empty,
                 validator: new StringValidator(isRequired: true, minLength: 3, maxLength: 10).Validate);
+            _firstName = new Property<string, StringError>(
+                defaultValue: string.Empty,
+                asyncValidator: (IObservable<string> values) => {
+                    return null;
+                });
             _lastName = new Property<string, StringError>(
-                value: string.Empty,
+                defaultValue: string.Empty,
                 validator: new StringValidator(isRequired: true, minLength: 3, maxLength: 10).Validate);
             _fullName = new Property<string, StringError>(
-                value: string.Empty,
+                defaultValue: string.Empty,
                 values: Observable.CombineLatest(_firstName, _lastName, (f, l) => $"{f} {l}"));
-            _isMarried = new Property<bool, Unit>(value: false);
+            _isMarried = new Property<bool, Unit>(defaultValue: false);
             _marriageYear = new Property<int, RangeError>(
-                value: 2000,
-                validator: new RangeValidator<int>(minimum: 1900, maximum: DateTime.Now.Year).Validate);
-            _isMarried.Subscribe(i => {
-                _marriageYear.IsEnabled.Value = i;
-            });
+                defaultValue: 2000,
+                validator: new RangeValidator<int>(minimum: 1900, maximum: DateTime.Now.Year).Validate,
+                isEnabled: _isMarried);
             _acceptName = new DelegateCommand(
                 action: () => {
                     _firstName.AcceptChanges();
@@ -55,9 +59,9 @@ namespace Client {
                 },
                 canExecute:
                     Observable.CombineLatest(
-                        _firstName.HasErrors,
+                        _firstName.Errors.Select(j => j.HasErrors.HasValue ? j.HasErrors.Value : true),
                         _firstName.HasChanges,
-                        _lastName.HasErrors,
+                        _lastName.Errors.Select(j => j.HasErrors.HasValue ? j.HasErrors.Value : true),
                         _lastName.HasChanges,
                         (fe, fc, le, lc) => !fe && !le && (fc || lc)));
             _rejectName = new DelegateCommand(
@@ -71,10 +75,10 @@ namespace Client {
                         _lastName.HasChanges,
                         (f, l) => (f || l)));
             _nicknameToAdd = new Property<string, StringError>(
-                value: string.Empty,
+                defaultValue: string.Empty,
                 validator: new StringValidator(isRequired: true, minLength: 3).Validate);
             _nicknames = new Property<ImmutableList<NicknameReport>, string>(
-                value: ImmutableList<NicknameReport>.Empty,
+                defaultValue: ImmutableList<NicknameReport>.Empty,
                 validator: (list) => {
                     List<string> errors = new List<string>();
                     if (list == null) {
@@ -102,21 +106,23 @@ namespace Client {
                     _nicknames.Value = _nicknames.Value.Add(report);
                     _nicknameToAdd.Value = string.Empty;
                 },
-                canExecute: _nicknameToAdd.HasErrors.Select(i => !i));
+                canExecute: _nicknameToAdd.Errors.Select(i => i.HasErrors == false));
             var anyErrors = Observable.CombineLatest(
-                _firstName.HasErrors,
-                _lastName.HasErrors,
-                _nicknames.HasErrors,
-                _isMarried.HasErrors,
-                _marriageYear.HasErrors,
-                (a, b, c,d,e) => a || b || c || d || e);
+                _firstName.Errors.Select(j => j.HasErrors),
+                _lastName.Errors.Select(j => j.HasErrors),
+                _nicknames.Errors.Select(j => j.HasErrors),
+                _isMarried.Errors.Select(j => j.HasErrors),
+                _marriageYear.Errors.Select(j => j.HasErrors))
+                .Select(i => i.Any(j => j != false))
+                .Do(i => Debug.WriteLine($"Errors {i}"));
             var anyChanges = Observable.CombineLatest(
                 _firstName.HasChanges,
                 _lastName.HasChanges,
                 _nicknames.HasChanges,
                 _isMarried.HasChanges,
-                _marriageYear.HasChanges,
-                (a, b, c, d, e) => a || b || c || d || e);
+                _marriageYear.HasChanges)
+                .Select(i => i.Any(j => j))
+                .Do(i => Debug.WriteLine($"Changes {i}"));
             _acceptAll = new DelegateCommand(
                 action: () => {
                     _firstName.AcceptChanges();

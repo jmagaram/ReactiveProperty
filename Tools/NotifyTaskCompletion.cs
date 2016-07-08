@@ -70,7 +70,7 @@ namespace Tools {
             public TaskStatus Status => Task.Status;
             public bool IsCompleted => Task.IsCompleted;
             public bool IsNotCompleted => !Task.IsCompleted;
-            public bool IsSuccessfullyCompleted => Task.Status == TaskStatus.RanToCompletion;
+            public bool IsSuccessfullyCompleted => Task.Status == System.Threading.Tasks.TaskStatus.RanToCompletion;
             public bool IsCanceled => Task.IsCanceled;
             public bool IsFaulted => Task.IsFaulted;
             public AggregateException Exception => Task.Exception;
@@ -116,11 +116,11 @@ namespace Tools {
             public Task<TResult> Task { get; }
             Task INotifyTaskCompletion.Task { get { return Task; } }
             public Task TaskCompleted { get; }
-            public TResult Result => (Task.Status == TaskStatus.RanToCompletion) ? Task.Result : default(TResult);
+            public TResult Result => (Task.Status == System.Threading.Tasks.TaskStatus.RanToCompletion) ? Task.Result : default(TResult);
             public TaskStatus Status => Task.Status;
             public bool IsCompleted => Task.IsCompleted;
             public bool IsNotCompleted => !Task.IsCompleted;
-            public bool IsSuccessfullyCompleted => Task.Status == TaskStatus.RanToCompletion;
+            public bool IsSuccessfullyCompleted => Task.Status == System.Threading.Tasks.TaskStatus.RanToCompletion;
             public bool IsCanceled => Task.IsCanceled;
             public bool IsFaulted => Task.IsFaulted;
             public AggregateException Exception => Task.Exception;

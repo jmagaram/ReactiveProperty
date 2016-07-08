@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -12,25 +10,32 @@ namespace Tools {
         CompositeDisposable _disposables;
         bool _isDisposed;
 
-        public PropertyBase(T value = default(T)) {
+        public PropertyBase(T value = default(T), IObservable<T> values = null) {
             _isDisposed = false;
             _disposables = new CompositeDisposable(_subject);
             _subject = new BehaviorSubject<T>(value);
             _subject
                 .Subscribe(i => { OnPropertyChanged(nameof(Value)); })
                 .AddTo(_disposables);
+            if (values != null) {
+                values
+                    .Subscribe(i => Value = i)
+                    .AddTo(Disposables);
+            }
         }
 
         public T Value
         {
             get { return _subject.Value; }
-            protected set
+            set
             {
                 if (!Equals(value, _subject.Value)) {
                     _subject.OnNext(value);
                 }
             }
         }
+
+        protected void ResubmitCurrentValue() => _subject.OnNext(Value);
 
         protected IObservable<T> Values => _subject.AsObservable();
 

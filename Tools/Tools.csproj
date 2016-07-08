@@ -36,10 +36,12 @@
   <ItemGroup>
     <Compile Include="AsyncCommand.cs" />
     <Compile Include="AsyncCommandBase.cs" />
+    <Compile Include="AsyncFunctionStatus.cs" />
     <Compile Include="Command.cs" />
     <Compile Include="DelegateCommand.cs" />
     <Compile Include="CalculatedProperty.cs" />
     <Compile Include="EditableProperty.cs" />
+    <Compile Include="Experiment.cs" />
     <Compile Include="IAsyncCommand.cs" />
     <Compile Include="IDisposableExtensions.cs" />
     <Compile Include="IObservableExtensions.cs" />
@@ -48,6 +50,7 @@
     <Compile Include="IRevertible.cs" />
     <Compile Include="ITrackChanges.cs" />
     <Compile Include="IValidate.cs" />
+    <Compile Include="IValidationStatus.cs" />
     <Compile Include="NotifyTaskCompletion.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Property.cs" />
@@ -56,6 +59,7 @@
     <Compile Include="RangeValidator.cs" />
     <Compile Include="StringError.cs" />
     <Compile Include="StringValidator.cs" />
+    <Compile Include="ValidationStatus.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Reactive.Core, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
