@@ -1,18 +1,20 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using static Tools.AsyncFunctionStatus;
 
 namespace Tools {
-    public class Property<TValue, TError> : PropertyBase<TValue> {
-        PropertyBase<IValidationStatus<TValue, TError>> _errors;
-        Func<IObservable<TValue>, IObservable<IValidationStatus<TValue, TError>>> _validator;
+    public class Property<TValue> : PropertyBase<TValue> {
+        PropertyBase<IValidationStatus> _errors;
+        Func<IObservable<TValue>, IObservable<KeyValuePair<TValue, IValidationStatus>>> _validator;
 
         public Property(
             TValue defaultValue = default(TValue),
             IObservable<TValue> values = null,
-            Func<IObservable<TValue>, IObservable<IValidationStatus<TValue, TError>>> asyncValidator = null,
-            Func<TValue, IEnumerable<TError>> validator = null,
+            Func<IObservable<TValue>, IObservable<KeyValuePair<TValue, IValidationStatus>>> asyncValidator = null,
+            Func<TValue, IEnumerable> validator = null,
             IObservable<bool> isEnabled = null,
             IObservable<bool> isVisible = null)
             : base(value: defaultValue, values: values) {
@@ -21,42 +23,23 @@ namespace Tools {
             HasChanges = new PropertyBase<bool>(values: Observable.CombineLatest(Original, Values, (o, c) => !Equals(o, c)));
             IsVisible = new PropertyBase<bool>(value: true, values: isVisible);
             IsEnabled = new PropertyBase<bool>(value: true, values: isEnabled);
-            _validator =
-                asyncValidator != null ? asyncValidator :
-                validator != null ? SyncValidator(validator)
-                : AlwaysValid;
-            _errors = new PropertyBase<IValidationStatus<TValue, TError>>(null);
+            _validator = asyncValidator != null ? asyncValidator : validator != null ? SyncValidator(validator) : AlwaysValid;
+            _errors = new PropertyBase<IValidationStatus>(null);
             AddToDisposables(Original, Errors, HasChanges, IsVisible, IsEnabled);
             Observable
-                .CombineLatest(this.Values, _validator(this.Values), (v, r) => new { Value = v, Result = r })
-                .Where(i => i.Result.Status != AsyncFunctionStatus.InProgress)
+                .CombineLatest(this.Values, _validator(this.Values), (v, r) => new { Value = v, ValidatedValue = r.Key, ErrorStatus = r.Value })
+                .Where(i => i.ErrorStatus.Status != InProgress)
                 .Select(i => {
-                    if (!Equals(i.Value, i.Result.Value)) {
-                        return new ValidationStatus<TValue, TError>(
-                            status: AsyncFunctionStatus.InProgress,
-                            value: i.Value);
+                    if (!Equals(i.Value, i.ValidatedValue)) {
+                        return new ValidationStatus(status: InProgress);
                     }
                     else {
-                        switch (i.Result.Status) {
-                            case AsyncFunctionStatus.InProgress:
-                                throw new NotImplementedException("This code should never be executed.");
-                            case AsyncFunctionStatus.Canceled:
-                                return new ValidationStatus<TValue, TError>(
-                                    value: i.Result.Value,
-                                    status: AsyncFunctionStatus.Canceled);
-                            case AsyncFunctionStatus.Faulted:
-                                return new ValidationStatus<TValue, TError>(
-                                    status: AsyncFunctionStatus.Faulted,
-                                    value: i.Result.Value,
-                                    exception: i.Result.Exception);
-                            case AsyncFunctionStatus.Completed:
-                                return new ValidationStatus<TValue, TError>(
-                                    status: AsyncFunctionStatus.Completed,
-                                    value: i.Result.Value,
-                                    errors: i.Result.Errors,
-                                    hasErrors: i.Result.HasErrors);
-                            default:
-                                throw new NotImplementedException();
+                        switch (i.ErrorStatus.Status) {
+                            case InProgress: throw new NotImplementedException("This code should never be executed.");
+                            case Canceled: return new ValidationStatus(status: Canceled);
+                            case Faulted: return new ValidationStatus(status: Faulted, exception: i.ErrorStatus.Exception);
+                            case Completed: return new ValidationStatus(status: Completed, errors: i.ErrorStatus.Errors, hasErrors: i.ErrorStatus.HasErrors);
+                            default: throw new NotImplementedException();
                         }
                     }
                 })
@@ -64,26 +47,23 @@ namespace Tools {
                 .AddTo(Disposables);
         }
 
-        static Func<IObservable<TValue>, IObservable<IValidationStatus<TValue, TError>>> SyncValidator(Func<TValue, IEnumerable<TError>> synchronousValidator) {
+        static Func<IObservable<TValue>, IObservable<KeyValuePair<TValue, IValidationStatus>>> SyncValidator(Func<TValue, IEnumerable> synchronousValidator) {
             return (IObservable<TValue> values) =>
                      values
-                     .Select(i => new ValidationStatus<TValue, TError>(
-                         status: AsyncFunctionStatus.Completed,
-                         value: i,
-                         exception: null,
-                         errors: synchronousValidator(i)));
+                     .Select(i => new KeyValuePair<TValue, IValidationStatus>(
+                         key: i,
+                         value: new ValidationStatus(status: Completed, exception: null, errors: synchronousValidator(i))));
         }
 
-        static IObservable<IValidationStatus<TValue, TError>> AlwaysValid(IObservable<TValue> values) {
-            return values.Select(i => new ValidationStatus<TValue, TError>(
-                status: AsyncFunctionStatus.Completed,
-                value: i,
-                errors: Enumerable.Empty<TError>(),
-                hasErrors: false,
-                exception: null));
+        static IObservable<KeyValuePair<TValue, IValidationStatus>> AlwaysValid(IObservable<TValue> values) {
+            return
+                values
+                .Select(i => new KeyValuePair<TValue, IValidationStatus>(
+                 key: i,
+                 value: new ValidationStatus(status: Completed, errors: Enumerable.Empty<object>(), hasErrors: false, exception: null)));
         }
 
-        public IReadOnlyProperty<IValidationStatus<TValue, TError>> Errors => _errors;
+        public IReadOnlyProperty<IValidationStatus> Errors => _errors;
 
         public void ForceValidation() => ResubmitCurrentValue();
 

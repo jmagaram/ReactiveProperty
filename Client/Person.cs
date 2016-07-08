@@ -19,13 +19,13 @@ using System.Diagnostics;
 
 namespace Client {
     public class Person {
-        Property<string, StringError> _firstName;
-        Property<string, StringError> _lastName;
-        Property<string, StringError> _fullName;
-        Property<string, StringError> _nicknameToAdd;
-        Property<ImmutableList<NicknameReport>, string> _nicknames;
-        Property<bool, Unit> _isMarried;
-        Property<int, RangeError> _marriageYear;
+        Property<string> _firstName;
+        Property<string> _lastName;
+        Property<string> _fullName;
+        Property<string> _nicknameToAdd;
+        Property<ImmutableList<NicknameReport>> _nicknames;
+        Property<bool> _isMarried;
+        Property<int> _marriageYear;
         DelegateCommand _acceptName;
         DelegateCommand _rejectName;
         DelegateCommand _addNickname;
@@ -33,22 +33,17 @@ namespace Client {
         DelegateCommand _rejectAll;
 
         public Person() {
-            _firstName = new Property<string, StringError>(
+            _firstName = new Property<string>(
                 defaultValue: string.Empty,
                 validator: new StringValidator(isRequired: true, minLength: 3, maxLength: 10).Validate);
-            _firstName = new Property<string, StringError>(
-                defaultValue: string.Empty,
-                asyncValidator: (IObservable<string> values) => {
-                    return null;
-                });
-            _lastName = new Property<string, StringError>(
+            _lastName = new Property<string>(
                 defaultValue: string.Empty,
                 validator: new StringValidator(isRequired: true, minLength: 3, maxLength: 10).Validate);
-            _fullName = new Property<string, StringError>(
+            _fullName = new Property<string>(
                 defaultValue: string.Empty,
                 values: Observable.CombineLatest(_firstName, _lastName, (f, l) => $"{f} {l}"));
-            _isMarried = new Property<bool, Unit>(defaultValue: false);
-            _marriageYear = new Property<int, RangeError>(
+            _isMarried = new Property<bool>(defaultValue: false);
+            _marriageYear = new Property<int>(
                 defaultValue: 2000,
                 validator: new RangeValidator<int>(minimum: 1900, maximum: DateTime.Now.Year).Validate,
                 isEnabled: _isMarried);
@@ -74,10 +69,10 @@ namespace Client {
                         _firstName.HasChanges,
                         _lastName.HasChanges,
                         (f, l) => (f || l)));
-            _nicknameToAdd = new Property<string, StringError>(
+            _nicknameToAdd = new Property<string>(
                 defaultValue: string.Empty,
                 validator: new StringValidator(isRequired: true, minLength: 3).Validate);
-            _nicknames = new Property<ImmutableList<NicknameReport>, string>(
+            _nicknames = new Property<ImmutableList<NicknameReport>>(
                 defaultValue: ImmutableList<NicknameReport>.Empty,
                 validator: (list) => {
                     List<string> errors = new List<string>();
@@ -113,16 +108,14 @@ namespace Client {
                 _nicknames.Errors.Select(j => j.HasErrors),
                 _isMarried.Errors.Select(j => j.HasErrors),
                 _marriageYear.Errors.Select(j => j.HasErrors))
-                .Select(i => i.Any(j => j != false))
-                .Do(i => Debug.WriteLine($"Errors {i}"));
+                .Select(i => i.Any(j => j != false));
             var anyChanges = Observable.CombineLatest(
                 _firstName.HasChanges,
                 _lastName.HasChanges,
                 _nicknames.HasChanges,
                 _isMarried.HasChanges,
                 _marriageYear.HasChanges)
-                .Select(i => i.Any(j => j))
-                .Do(i => Debug.WriteLine($"Changes {i}"));
+                .Select(i => i.Any(j => j));
             _acceptAll = new DelegateCommand(
                 action: () => {
                     _firstName.AcceptChanges();
@@ -146,16 +139,16 @@ namespace Client {
             // add all to disposables
         }
 
-        public Property<string, StringError> FirstName => _firstName;
-        public Property<string, StringError> LastName => _lastName;
-        public Property<string, StringError> FullName => _fullName;
-        public Property<bool, Unit> IsMarried => _isMarried;
-        public Property<int, RangeError> MarriageYear => _marriageYear;
+        public Property<string> FirstName => _firstName;
+        public Property<string> LastName => _lastName;
+        public Property<string> FullName => _fullName;
+        public Property<bool> IsMarried => _isMarried;
+        public Property<int> MarriageYear => _marriageYear;
         public ICommand AcceptName => _acceptName;
         public ICommand RejectName => _rejectName;
         public ICommand AddNickname => _addNickname;
-        public Property<string, StringError> NicknameToAdd => _nicknameToAdd;
-        public Property<ImmutableList<NicknameReport>, string> Nicknames => _nicknames;
+        public Property<string> NicknameToAdd => _nicknameToAdd;
+        public Property<ImmutableList<NicknameReport>> Nicknames => _nicknames;
         public ICommand AcceptAll => _acceptAll;
         public ICommand RejectAll => _rejectAll;
     }
