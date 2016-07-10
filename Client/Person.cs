@@ -23,12 +23,11 @@ namespace Client {
         Property<string> _lastName;
         Property<string> _fullName;
         Property<string> _nicknameToAdd;
+        Property<string> _website;
         Property<ImmutableList<NicknameReport>> _nicknames;
         Property<bool> _isMarried;
         Property<int> _marriageYear;
         Address _address;
-        DelegateCommand _acceptName;
-        DelegateCommand _rejectName;
         DelegateCommand _addNickname;
         DelegateCommand _acceptAll;
         DelegateCommand _rejectAll;
@@ -49,28 +48,24 @@ namespace Client {
                 defaultValue: 2000,
                 validator: new RangeValidator<int>(minimum: 1900, maximum: DateTime.Now.Year).Validate,
                 isEnabled: _isMarried);
-            _acceptName = new DelegateCommand(
-                action: () => {
-                    _firstName.AcceptChanges();
-                    _lastName.AcceptChanges();
-                },
-                canExecute:
-                    Observable.CombineLatest(
-                        _firstName.Errors.Select(j => j.Status == ValidationStatus.IsValid),
-                        _firstName.HasChanges,
-                        _lastName.Errors.Select(j => j.Status == ValidationStatus.IsValid),
-                        _lastName.HasChanges,
-                        (fe, fc, le, lc) => !fe && !le && (fc || lc)));
-            _rejectName = new DelegateCommand(
-                action: () => {
-                    _firstName.RejectChanges();
-                    _lastName.RejectChanges();
-                },
-                canExecute:
-                    Observable.CombineLatest(
-                        _firstName.HasChanges,
-                        _lastName.HasChanges,
-                        (f, l) => (f || l)));
+            _website = new Property<string>(
+                defaultValue: string.Empty,
+                asyncValidator: (values) => {
+                    return
+                        values
+                        .Throttle(TimeSpan.FromSeconds(1))
+                        .Select(i => {
+                            bool isOk = string.IsNullOrWhiteSpace(i) || i.ToLower().EndsWith(".com");
+                            string[] errors = isOk ? new string[] { } : new string[] { "Does not end with .com but should" };
+                            ValidationDataErrorInfo errorInfo = new ValidationDataErrorInfo(
+                                status: isOk ? ValidationStatus.IsValid : ValidationStatus.HasErrors,
+                                descendentStatus: null,
+                                errors: errors,
+                                exception: null);
+                            return new KeyValuePair<string,ValidationDataErrorInfo>(i, errorInfo);
+                        })
+                        .ObserveOnDispatcher();
+                });
             _nicknameToAdd = new Property<string>(
                 defaultValue: string.Empty,
                 validator: new StringValidator(isRequired: true, minLength: 3).Validate);
@@ -145,9 +140,8 @@ namespace Client {
         public Property<string> LastName => _lastName;
         public Property<string> FullName => _fullName;
         public Property<bool> IsMarried => _isMarried;
+        public Property<string> Website => _website;
         public Property<int> MarriageYear => _marriageYear;
-        public ICommand AcceptName => _acceptName;
-        public ICommand RejectName => _rejectName;
         public ICommand AddNickname => _addNickname;
         public Property<string> NicknameToAdd => _nicknameToAdd;
         public Property<ImmutableList<NicknameReport>> Nicknames => _nicknames;
