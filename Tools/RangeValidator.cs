@@ -14,10 +14,10 @@ namespace Tools {
         public IEnumerable<RangeError> Validate(T i) {
             Comparer<T> comparer = Comparer<T>.Default;
             if (Minimum.HasValue && comparer.Compare(Minimum.Value, i) > 0) {
-                yield return RangeError.TooBig;
+                yield return RangeError.TooSmall;
             }
             if (Maximum.HasValue && comparer.Compare(i, Maximum.Value) > 0) {
-                yield return (RangeError.TooBig);
+                yield return RangeError.TooBig;
             }
         }
 

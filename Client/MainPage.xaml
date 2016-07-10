@@ -31,12 +31,8 @@
                 </ListView.ItemTemplate>
             </ListView>
         </Border>
-        <Rectangle x:Name="firstNameError" Fill="{Binding FirstName.Errors.Value.HasErrors, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="219,44,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
-        <Rectangle x:Name="lastNameError" Fill="{Binding LastName.Errors.Value.HasErrors, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="219,147,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
         <CheckBox x:Name="isMarried" Content="Is married?" HorizontalAlignment="Left" Margin="12,290,0,0" VerticalAlignment="Top" IsChecked="{Binding IsMarried.Value, Mode=TwoWay}"/>
         <TextBox Header="Marriage year" x:Name="marriageYear" HorizontalAlignment="Left" Margin="43,322,0,0" TextWrapping="Wrap" Text="{Binding MarriageYear.Value, Mode=TwoWay}" VerticalAlignment="Top" Width="174" IsEnabled="{Binding MarriageYear.IsEnabled.Value}"/>
-        <Rectangle x:Name="marriageYearValidator" Fill="{Binding MarriageYear.Errors.Value.HasErrors, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="235,358,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
-        <Rectangle x:Name="nicknameListErrors" Fill="{Binding Nicknames.Errors.Value.HasErrors, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="998,44,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
         <Button x:Name="acceptAllButton" Content="Accept All" HorizontalAlignment="Left" Margin="12,668,0,0" VerticalAlignment="Top" Width="190" Command="{Binding AcceptAll, Mode=OneWay}"/>
         <Button x:Name="rejectAllButton" Content="Reject All" HorizontalAlignment="Left" Margin="219,668,0,0" VerticalAlignment="Top" Width="227" Command="{Binding RejectAll, Mode=OneWay}"/>
         <TextBox Header="Street" x:Name="street" HorizontalAlignment="Left" Margin="42,575,0,0" TextWrapping="Wrap" Text="{Binding Address.Street.Value, Mode=TwoWay}" VerticalAlignment="Top" Width="223"/>
@@ -53,7 +49,11 @@
         <TextBlock x:Name="homeAddressTitle" HorizontalAlignment="Left" Margin="12,520,0,0" TextWrapping="Wrap" Text="Home address" VerticalAlignment="Top"/>
         <TextBlock x:Name="homeAddressRequirements" HorizontalAlignment="Left" Margin="12,545,0,0" TextWrapping="Wrap" Text="All fields required" VerticalAlignment="Top" Style="{StaticResource helpText}"/>
         <TextBox Header="Website" x:Name="website" HorizontalAlignment="Left" Margin="12,422,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="202" Text="{Binding Website.Value, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
-        <Rectangle x:Name="websiteErrors" Fill="{Binding Website.Errors.Value.HasErrors, Converter={StaticResource boolToColorConverter}, Mode=OneWay}" HorizontalAlignment="Left" Height="24" Margin="219,458,0,0" Stroke="Black" VerticalAlignment="Top" Width="30"/>
         <TextBlock x:Name="websiteRequirements" HorizontalAlignment="Left" Margin="12,483,0,0" TextWrapping="Wrap" Text="URL must end with .com only" VerticalAlignment="Top" Style="{StaticResource helpText}"/>
+        <local:ErrorViewer x:Name="websiteErrorViewer" HorizontalAlignment="Left" Margin="224,422,0,0" VerticalAlignment="Top" Height="144" Width="330" ErrorInfo="{Binding Website.Errors, Mode=OneWay}"/>
+        <local:ErrorViewer x:Name="firstNameErrorViewer" HorizontalAlignment="Left" Margin="219,10,0,0" VerticalAlignment="Top" ErrorInfo="{Binding FirstName.Errors, Mode=OneWay}" Width="319"/>
+        <local:ErrorViewer x:Name="lastNameErrorViewer" HorizontalAlignment="Left" Margin="219,120,0,0" VerticalAlignment="Top" ErrorInfo="{Binding LastName.Errors, Mode=OneWay}" Width="335"/>
+        <local:ErrorViewer x:Name="marriageYearErrorViewer" HorizontalAlignment="Left" Margin="238,320,0,0" VerticalAlignment="Top" ErrorInfo="{Binding MarriageYear.Errors, Mode=OneWay}" Width="316"/>
+        <local:ErrorViewer x:Name="nicknameListErrorViewer" HorizontalAlignment="Left" Margin="609,420,0,0" VerticalAlignment="Top" ErrorInfo="{Binding Nicknames.Errors, Mode=OneWay}" Width="420"/>
     </Grid>
 </Page>
