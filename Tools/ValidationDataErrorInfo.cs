@@ -19,7 +19,7 @@ namespace Tools {
             exception: null) {
         }
 
-        public ValidationDataErrorInfo(IEnumerable<ValidationDataErrorInfo> items) : this(status: items.Select(i => i.CompositeStatus).Aggregate((j, k) => j | k), descendentStatus: null, errors: null, exception: null) { }
+        public ValidationDataErrorInfo(IEnumerable<ValidationDataErrorInfo> items) : this(status: items?.Select(i => i.CompositeStatus).Aggregate((j, k) => j | k) ?? ValidationStatus.IsValid, descendentStatus: null, errors: null, exception: null) { }
 
         public ValidationStatus Status { get; }
 

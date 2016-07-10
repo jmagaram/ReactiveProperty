@@ -49,7 +49,7 @@ namespace Client {
                 validator: new RangeValidator<int>(minimum: 1900, maximum: DateTime.Now.Year).Validate,
                 isEnabled: _isMarried);
             _website = new Property<string>(
-                defaultValue: string.Empty,
+                defaultValue: "www.google.com",
                 asyncValidator: (values) => {
                     return
                         values
@@ -62,7 +62,7 @@ namespace Client {
                                 descendentStatus: null,
                                 errors: errors,
                                 exception: null);
-                            return new KeyValuePair<string,ValidationDataErrorInfo>(i, errorInfo);
+                            return new KeyValuePair<string, ValidationDataErrorInfo>(i, errorInfo);
                         })
                         .ObserveOnDispatcher();
                 });
@@ -100,17 +100,25 @@ namespace Client {
                 },
                 canExecute: _nicknameToAdd.Errors.Select(i => i.Status == ValidationStatus.IsValid));
             var anyErrors = Observable.CombineLatest(
-                _firstName.Errors.Select(j => j.Status!= ValidationStatus.IsValid),
+                _firstName.Errors.Select(j => j.Status != ValidationStatus.IsValid),
                 _lastName.Errors.Select(j => j.Status != ValidationStatus.IsValid),
                 _nicknames.Errors.Select(j => j.Status != ValidationStatus.IsValid),
                 _isMarried.Errors.Select(j => j.Status != ValidationStatus.IsValid),
+                _website.Errors.Select(j => j.Status != ValidationStatus.IsValid), // why need the null check here but not elsewhere?
+                _address.Errors.Select(j => j.Status != ValidationStatus.IsValid),
                 _marriageYear.Errors.Select(j => j.Status != ValidationStatus.IsValid))
                 .Select(i => i.Any(j => j != false));
+
+            // NOTE: Not all properties affect whether can accept the form; subforms like nicknameToAdd!
+            //var anyErrors =
+            //    Observable.CombineLatest((new IValidate[] { _firstName, _lastName, _nicknames, _website, _address, _marriageYear }).Select(i => i.Errors.Select(z => z.Status != ValidationStatus.IsValid))).Select(i=>i.Any(j=>j!=false));
             var anyChanges = Observable.CombineLatest(
                 _firstName.HasChanges,
                 _lastName.HasChanges,
                 _nicknames.HasChanges,
                 _isMarried.HasChanges,
+                _website.HasChanges,
+                _address.HasChanges,
                 _marriageYear.HasChanges)
                 .Select(i => i.Any(j => j));
             _acceptAll = new DelegateCommand(
@@ -120,6 +128,8 @@ namespace Client {
                     _nicknames.AcceptChanges();
                     _isMarried.AcceptChanges();
                     _marriageYear.AcceptChanges();
+                    _address.AcceptChanges();
+                    _website.AcceptChanges();
                     //_fullName.AcceptChanges(); // does not make sense. should not be allowed. same with editing. weird.
                 },
                 canExecute: Observable.CombineLatest(anyErrors, anyChanges, (errs, chg) => chg && !errs)
@@ -131,6 +141,8 @@ namespace Client {
                     _nicknames.RejectChanges();
                     _isMarried.RejectChanges();
                     _marriageYear.RejectChanges();
+                    _website.RejectChanges();
+                    _address.RejectChanges();
                 },
                 canExecute: anyChanges);
             // add all to disposables

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Tools;
 
 namespace Client {
-    public class Address : IValidate {
+    public class Address : IValidate, IRevertible {
         public Address() {
             // disposable?
             Street = new Property<string>(defaultValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
@@ -16,15 +16,32 @@ namespace Client {
             Zip = new Property<string>(defaultValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
             Errors = new PropertyBase<ValidationDataErrorInfo>(
                 value: null,
-                values: Observable .CombineLatest(Street.Errors, City.Errors, Zip.Errors) .Select(i => {
+                values: Observable.CombineLatest(Street.Errors, City.Errors, Zip.Errors).Select(i => {
                     return new ValidationDataErrorInfo(i);
                 }));
+            HasChanges = new Property<bool>(
+                defaultValue: false,
+                values: Observable.CombineLatest(Street.HasChanges, City.HasChanges, Zip.HasChanges).Select(i => i.Any(j => j)));
         }
         public Property<string> Street { get; }
         public Property<string> City { get; }
         public Property<string> Zip { get; }
 
         public IReadOnlyProperty<ValidationDataErrorInfo> Errors { get; }
+
+
+        public IReadOnlyProperty<bool> HasChanges { get; }
+        public void AcceptChanges() {
+            Street.AcceptChanges();
+            City.AcceptChanges();
+            Zip.AcceptChanges();
+        }
+
+        public void RejectChanges() {
+            Street.RejectChanges();
+            City.RejectChanges();
+            Zip.RejectChanges();
+        }
     }
 
     // read-only version

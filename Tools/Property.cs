@@ -24,7 +24,9 @@ namespace Tools {
             IsVisible = new PropertyBase<bool>(value: true, values: isVisible);
             IsEnabled = new PropertyBase<bool>(value: true, values: isEnabled);
             _validator = asyncValidator != null ? asyncValidator : validator != null ? SyncValidator(validator) : AlwaysValid;
-            _errors = new PropertyBase<ValidationDataErrorInfo>(null);
+            // MUST set default error to null (no errors) or else async validators have a Null state until they get going
+            // or maybe better approach is to set it to unknown?
+            _errors = new PropertyBase<ValidationDataErrorInfo>(new ValidationDataErrorInfo(ValidationStatus.Unknown,descendentStatus:null,errors:null,exception:null)); 
             AddToDisposables(Original, Errors, HasChanges, IsVisible, IsEnabled);
             Observable
                 .CombineLatest(this.Values, _validator(this.Values), (v, r) => new { LatestValue = v, ValidatedValue = r.Key, ErrorStatus = r.Value })
