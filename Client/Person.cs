@@ -53,7 +53,7 @@ namespace Client {
                 asyncValidator: (values) => {
                     return
                         values
-                        .Throttle(TimeSpan.FromSeconds(1))
+                        .Throttle(TimeSpan.FromSeconds(3))
                         .Select(i => {
                             bool isOk = string.IsNullOrWhiteSpace(i) || i.ToLower().EndsWith(".com");
                             string[] errors = isOk ? new string[] { } : new string[] { "Does not end with .com but should" };

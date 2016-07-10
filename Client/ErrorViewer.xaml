@@ -29,11 +29,11 @@
         <StackPanel HorizontalAlignment="Stretch" Orientation="Vertical">
             <StackPanel x:Name="compositeStatus" Orientation="Horizontal">
                 <Rectangle x:Name="compositeShape" Style="{StaticResource rectangleStyle}"/>
-                <TextBlock x:Name="compositeErrorMessage" Text="Overall status here status herestatus herestatus here" Style="{StaticResource messageStyle}"/>
+                <TextBlock x:Name="compositeErrorMessage" Text="Overall status here" Style="{StaticResource messageStyle}"/>
             </StackPanel>
             <StackPanel x:Name="nodeStatus" Orientation="Horizontal">
                 <Rectangle x:Name="shape" Style="{StaticResource rectangleStyle}"/>
-                <TextBlock x:Name="errorMessage" Text="Error message here status herestatus herestatus herestatus herestatus here" Style="{StaticResource messageStyle}"/>
+                <TextBlock x:Name="errorMessage" Text="Node status here" Style="{StaticResource messageStyle}"/>
             </StackPanel>
         </StackPanel>
     </Grid>

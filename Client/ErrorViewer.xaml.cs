@@ -30,6 +30,8 @@ namespace Client {
 
         public bool ShowCompositeStatus { get; set; }
 
+        public bool OnlyShowStatusWhenUnknown { get; set; } = true;
+
         public IReadOnlyProperty<ValidationDataErrorInfo> ErrorInfo
         {
             get { return (IReadOnlyProperty<ValidationDataErrorInfo>)GetValue(ErrorInfoProperty); }
@@ -47,14 +49,20 @@ namespace Client {
                     value.Subscribe(i => {
                         if (i == null) return;
                         var x = value.Value;
-                        viewer.shape.Fill = x.Status.HasFlag(ValidationStatus.HasErrors) ? errorBrush : ValidationStatus.Unknown.HasFlag(x.Status) ? unknownBrush : goodBrush;
-                        viewer.errorMessage.Text = $"{StatusToString(x.Status)} {ErrorsToString(x.Errors)}";
-                        viewer.errorMessage.Visibility = (x.Status != ValidationStatus.IsValid) ? Visibility.Visible : Visibility.Collapsed;
-                        if (viewer.ShowCompositeStatus) {
+                        if (viewer.OnlyShowStatusWhenUnknown && x.Status == ValidationStatus.IsValid) {
+                            viewer.nodeStatus.Visibility = Visibility.Collapsed;
+                        }
+                        else {
+                            viewer.nodeStatus.Visibility = Visibility.Visible;
+                            viewer.shape.Fill = x.Status.HasFlag(ValidationStatus.HasErrors) ? errorBrush : ValidationStatus.Unknown.HasFlag(x.Status) ? unknownBrush : goodBrush;
+                            viewer.errorMessage.Text = $"{StatusToString(x.Status)} {ErrorsToString(x.Errors)}";
+                            viewer.errorMessage.Visibility = (x.Status != ValidationStatus.IsValid) ? Visibility.Visible : Visibility.Collapsed;
+                        }
+                        if (viewer.ShowCompositeStatus && (x.CompositeStatus != ValidationStatus.IsValid || !viewer.OnlyShowStatusWhenUnknown)) {
                             viewer.compositeStatus.Visibility = Visibility.Visible;
                             viewer.compositeShape.Fill = x.CompositeStatus.HasFlag(ValidationStatus.HasErrors) ? errorBrush : ValidationStatus.Unknown.HasFlag(x.CompositeStatus) ? unknownBrush : goodBrush;
                             viewer.compositeErrorMessage.Text = $"OVERALL: {StatusToString(x.CompositeStatus)}";
-                            viewer.compositeErrorMessage.Visibility = (x.CompositeStatus!= ValidationStatus.IsValid) ? Visibility.Visible : Visibility.Collapsed;
+                            viewer.compositeErrorMessage.Visibility = (x.CompositeStatus != ValidationStatus.IsValid) ? Visibility.Visible : Visibility.Collapsed;
                         }
                         else {
                             viewer.compositeStatus.Visibility = Visibility.Collapsed;
