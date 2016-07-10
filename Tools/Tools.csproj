@@ -48,6 +48,7 @@
     <Compile Include="IRevertible.cs" />
     <Compile Include="ITrackChanges.cs" />
     <Compile Include="IValidate.cs" />
+    <Compile Include="Model.cs" />
     <Compile Include="NotifyTaskCompletion.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Property.cs" />

@@ -8,9 +8,8 @@ using System.Threading.Tasks;
 using Tools;
 
 namespace Client {
-    public class Address : IValidate, IRevertible {
+    public class Address : Model, IValidate, IRevertible {
         public Address() {
-            // disposable?
             Street = new Property<string>(defaultValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
             City = new Property<string>(defaultValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
             Zip = new Property<string>(defaultValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
@@ -22,13 +21,13 @@ namespace Client {
             HasChanges = new Property<bool>(
                 defaultValue: false,
                 values: Observable.CombineLatest(Street.HasChanges, City.HasChanges, Zip.HasChanges).Select(i => i.Any(j => j)));
+            AddToDisposables(Street, City, Zip);
         }
         public Property<string> Street { get; }
         public Property<string> City { get; }
         public Property<string> Zip { get; }
 
         public IReadOnlyProperty<ValidationDataErrorInfo> Errors { get; }
-
 
         public IReadOnlyProperty<bool> HasChanges { get; }
         public void AcceptChanges() {

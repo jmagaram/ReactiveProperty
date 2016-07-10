@@ -18,7 +18,7 @@ using System.Threading;
 using System.Diagnostics;
 
 namespace Client {
-    public class Person {
+    public class Person : Model {
         Property<string> _firstName;
         Property<string> _lastName;
         Property<string> _fullName;
@@ -145,7 +145,7 @@ namespace Client {
                     _address.RejectChanges();
                 },
                 canExecute: anyChanges);
-            // add all to disposables
+            AddToDisposables(_firstName, _lastName, _website);
         }
 
         public Property<string> FirstName => _firstName;
