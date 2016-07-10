@@ -26,6 +26,7 @@ namespace Client {
         Property<ImmutableList<NicknameReport>> _nicknames;
         Property<bool> _isMarried;
         Property<int> _marriageYear;
+        Address _address;
         DelegateCommand _acceptName;
         DelegateCommand _rejectName;
         DelegateCommand _addNickname;
@@ -33,6 +34,7 @@ namespace Client {
         DelegateCommand _rejectAll;
 
         public Person() {
+            _address = new Address();
             _firstName = new Property<string>(
                 defaultValue: string.Empty,
                 validator: new StringValidator(isRequired: true, minLength: 3, maxLength: 10).Validate);
@@ -54,9 +56,9 @@ namespace Client {
                 },
                 canExecute:
                     Observable.CombineLatest(
-                        _firstName.Errors.Select(j => j.HasErrors.HasValue ? j.HasErrors.Value : true),
+                        _firstName.Errors.Select(j => j.Status == ValidationStatus.IsValid),
                         _firstName.HasChanges,
-                        _lastName.Errors.Select(j => j.HasErrors.HasValue ? j.HasErrors.Value : true),
+                        _lastName.Errors.Select(j => j.Status == ValidationStatus.IsValid),
                         _lastName.HasChanges,
                         (fe, fc, le, lc) => !fe && !le && (fc || lc)));
             _rejectName = new DelegateCommand(
@@ -101,13 +103,13 @@ namespace Client {
                     _nicknames.Value = _nicknames.Value.Add(report);
                     _nicknameToAdd.Value = string.Empty;
                 },
-                canExecute: _nicknameToAdd.Errors.Select(i => i.HasErrors == false));
+                canExecute: _nicknameToAdd.Errors.Select(i => i.Status == ValidationStatus.IsValid));
             var anyErrors = Observable.CombineLatest(
-                _firstName.Errors.Select(j => j.HasErrors),
-                _lastName.Errors.Select(j => j.HasErrors),
-                _nicknames.Errors.Select(j => j.HasErrors),
-                _isMarried.Errors.Select(j => j.HasErrors),
-                _marriageYear.Errors.Select(j => j.HasErrors))
+                _firstName.Errors.Select(j => j.Status!= ValidationStatus.IsValid),
+                _lastName.Errors.Select(j => j.Status != ValidationStatus.IsValid),
+                _nicknames.Errors.Select(j => j.Status != ValidationStatus.IsValid),
+                _isMarried.Errors.Select(j => j.Status != ValidationStatus.IsValid),
+                _marriageYear.Errors.Select(j => j.Status != ValidationStatus.IsValid))
                 .Select(i => i.Any(j => j != false));
             var anyChanges = Observable.CombineLatest(
                 _firstName.HasChanges,
@@ -149,6 +151,7 @@ namespace Client {
         public ICommand AddNickname => _addNickname;
         public Property<string> NicknameToAdd => _nicknameToAdd;
         public Property<ImmutableList<NicknameReport>> Nicknames => _nicknames;
+        public Address Address => _address;
         public ICommand AcceptAll => _acceptAll;
         public ICommand RejectAll => _rejectAll;
     }

@@ -1,30 +1,31 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using static Tools.AsyncFunctionStatus;
 
 namespace Tools {
-    class ValidationStatus : IValidationStatus {
-        public ValidationStatus(AsyncFunctionStatus status, IEnumerable errors = null, bool? hasErrors = default(bool?), Exception exception = null) {
-            if (status == Completed && errors == null)
-                throw new ArgumentException($"Since the validation completed, '{nameof(errors)}' must be provided; use an empty enumerable to indicate no errors.");
-            if (status != Completed && (errors != null || hasErrors != null))
-                throw new ArgumentException($"Since the validation did not complete, both '{nameof(errors)}' and '{nameof(hasErrors)}' must be null.");
-            if (status == Faulted ^ exception != null)
-                throw new ArgumentException($"Either '{nameof(exception)}' should be provided, or the validation did not fault.", nameof(exception));
-            Status = status;
-            Errors = errors?.Cast<object>().ToArray();
-            HasErrors =
-                (status != Completed) ? null :
-                (hasErrors.HasValue) ? hasErrors.Value :
-                (bool?)(Errors.Cast<object>().Any());
-            Exception = exception;
-        }
-
-        public IEnumerable Errors { get; }
-        public Exception Exception { get; }
-        public bool? HasErrors { get; }
-        public AsyncFunctionStatus Status { get; }
+    [Flags]
+    public enum ValidationStatus {
+        /// <summary>
+        /// Validation started but has not yet completed.
+        /// </summary>
+        Running = 1,
+        /// <summary>
+        /// Validation was canceled. It is unknown if validation rules are satisfied. 
+        /// </summary>
+        Canceled = 2,
+        /// <summary>
+        /// Validation ended unexpectedly (e.g. network is down). It is unknown if validation rules are satisfied. 
+        /// </summary>
+        Faulted = 4,
+        /// <summary>
+        /// Validation completed and data errors were detected.
+        /// </summary>
+        HasErrors = 8,
+        /// <summary>
+        /// Validation completed. All validation rules were satisfied.
+        /// </summary>
+        IsValid = 16,
+        /// <summary>
+        /// It is unknown if all validation rules are satisfied; the validation process is running or did not complete normally.
+        /// </summary>
+        Unknown = Running | Canceled | Faulted
     }
 }

@@ -5,10 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Tools {
+    [Flags]
     public enum AsyncFunctionStatus {
-        InProgress,
-        Faulted,
-        Canceled,
-        Completed,
+        InProgress = 1,
+        Faulted = 2,
+        Canceled = 4,
+        Completed = 8
     }
 }
