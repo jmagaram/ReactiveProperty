@@ -47,7 +47,7 @@
         <TextBlock x:Name="lastNameRequirements_Copy" HorizontalAlignment="Left" Margin="43,387,0,0" TextWrapping="Wrap" Text="Not earlier than 1900 or later than this year" VerticalAlignment="Top" Style="{StaticResource helpText}"/>
         <TextBlock x:Name="nicknameListTitle" HorizontalAlignment="Left" Margin="609,128,0,0" TextWrapping="Wrap" Text="Nicknames" VerticalAlignment="Top"/>
         <TextBlock x:Name="homeAddressTitle" HorizontalAlignment="Left" Margin="12,520,0,0" TextWrapping="Wrap" Text="Home address" VerticalAlignment="Top"/>
-        <TextBlock x:Name="homeAddressRequirements" HorizontalAlignment="Left" Margin="12,545,0,0" TextWrapping="Wrap" Text="All fields required and 3 or more characters" VerticalAlignment="Top" Style="{StaticResource helpText}"/>
+        <TextBlock x:Name="homeAddressRequirements" HorizontalAlignment="Left" Margin="12,545,0,0" TextWrapping="Wrap" Text="All fields required and 3 or more characters; street and city must start with same letter" VerticalAlignment="Top" Style="{StaticResource helpText}"/>
         <TextBox Header="Website" x:Name="website" HorizontalAlignment="Left" Margin="12,422,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="202" Text="{Binding Website.Value, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
         <TextBlock x:Name="websiteRequirements" HorizontalAlignment="Left" Margin="12,483,0,0" TextWrapping="Wrap" Text="URL must end with .com only" VerticalAlignment="Top" Style="{StaticResource helpText}"/>
         <local:ErrorViewer x:Name="websiteErrorViewer" HorizontalAlignment="Left" Margin="224,422,0,0" VerticalAlignment="Top" Height="144" Width="330" ErrorInfo="{Binding Website.Errors, Mode=OneWay}"/>

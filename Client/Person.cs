@@ -18,7 +18,7 @@ using System.Threading;
 using System.Diagnostics;
 
 namespace Client {
-    public class Person : Model {
+    public class Person : Model, IValidate {
         Property<string> _firstName;
         Property<string> _lastName;
         Property<string> _fullName;
@@ -160,5 +160,15 @@ namespace Client {
         public Address Address => _address;
         public ICommand AcceptAll => _acceptAll;
         public ICommand RejectAll => _rejectAll;
+
+
+
+        public IReadOnlyProperty<ValidationDataErrorInfo> Errors
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
     }
 }
