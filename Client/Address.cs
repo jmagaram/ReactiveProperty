@@ -8,25 +8,69 @@ using System.Threading.Tasks;
 using Tools;
 
 namespace Client {
-    //public class CompositionTest : Model, IEditableProperty<string> {
-    //    Property<string> _fullName;
+    public abstract class ValidatableModel : IValidate {
+        public ValidatableModel() {
+            IObservable<ValidationStatus> childrenStatus =
+                Items
+                .Select(i => i.Select(j => j.Errors))
+                .Select(i => i.Select(j => j.Value.CompositeStatus))
+                .Select(i => i.Aggregate((j, k) => j | k));
+            // update composite status when children change, regardless of whether their errors change
+            //IObservable<ValidationDataErrorInfo> crossPropertyErrors =
+            //    childrenStatus.Select(i => {
+            //        if (i!= ValidationStatus.IsValid) {
+            //            return new ValidationDataErrorInfo(status: ValidationStatus.HasErrors, descendentStatus: i, errors: null, exception: null);
+            //        }
+            //        else {
+            //            return CrossPropertyErrors.Latest();
+            //        }
+            //    });
 
-    //    public CompositionTest() {
-    //        _fullName = new Property<string>();
-    //        _fullName.PropertyChanged += (sender, args) => OnPropertyChanged(args);
-    //        AddToDisposables(_fullName);
-    //    }
+        }
+        protected abstract IObservable<IEnumerable<IValidate>> Items { get; }
+        protected abstract IObservable<ValidationDataErrorInfo> CrossPropertyErrors { get; }
 
-    //    public string Value
-    //    {
-    //        get { return _fullName.Value; }
-    //        set { _fullName.Value = value; }
-    //    }
+        protected IObservable<IEnumerable<KeyValuePair<IValidate,ValidationDataErrorInfo>>> LatestChildrenValidationStatus { get; }
 
-    //    string IReadOnlyProperty<string>.Value => _fullName.Value;
+        public IReadOnlyProperty<ValidationDataErrorInfo> Errors
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+    }
 
-    //    public IDisposable Subscribe(IObserver<string> observer) => _fullName.Subscribe(observer);
-    //}
+    public class Address2 : ValidatableModel {
+        public Property<string> Street { get; }
+        public Property<string> City { get; }
+        public Property<string> Zip { get; }
+
+        protected override IObservable<IEnumerable<IValidate>> Items => Observable.Return(new IValidate[] { Street, City, Zip });
+
+        // THIS NEEDS TO KNOW
+        //    Latest values for each property
+        //    Validation status of each property
+        // only want to ever call this if ALL children are ok. no, not really. some children might be bad but not those that correspond to some cross-property validation.
+        // so can implement this BUT need helpers to make it easier to know what is going on with child properties - which have errors and which don't
+        protected override IObservable<ValidationDataErrorInfo> CrossPropertyErrors
+        {
+            get
+            {
+                var result =
+                Observable.CombineLatest(Street, City, (s, c) => new { Street = s, City = c }).Select(i => {
+                    if (i.Street.Length + i.City.Length > 10) {
+                        // weird how child status is ignored here
+                        return new ValidationDataErrorInfo(status: ValidationStatus.HasErrors, descendentStatus: null, errors: new string[] { "not same length" }, exception: null);
+                    }
+                    else {
+                        return new ValidationDataErrorInfo(status: ValidationStatus.IsValid, descendentStatus: null, errors: null, exception: null);
+                    }
+                });
+                return result;
+            }
+        }
+    }
 
     public class Address : Model, IValidate, IRevertible {
         PropertyBase<ValidationDataErrorInfo> _errors;
@@ -41,7 +85,7 @@ namespace Client {
             var latestCity = Observable.CombineLatest(City, City.Errors, (e, errors) => new { Item = e, Errors = errors });
             var latestZip = Observable.CombineLatest(Zip, Zip.Errors, (e, errors) => new { Item = e, Errors = errors });
             _errors = new PropertyBase<ValidationDataErrorInfo>(
-                value: null, 
+                value: null,
                 values: Observable
                 .CombineLatest(latestStreet, latestCity, latestZip, (s, c, z) => new { Street = s, City = c, Zip = z })
                 .Select(i => {

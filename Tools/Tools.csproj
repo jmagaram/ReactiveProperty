@@ -36,7 +36,6 @@
   <ItemGroup>
     <Compile Include="AsyncCommand.cs" />
     <Compile Include="AsyncCommandBase.cs" />
-    <Compile Include="AsyncFunctionStatus.cs" />
     <Compile Include="Command.cs" />
     <Compile Include="DelegateCommand.cs" />
     <Compile Include="Experiment.cs" />
