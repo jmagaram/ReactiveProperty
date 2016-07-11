@@ -6,7 +6,7 @@ using System.Reactive.Linq;
 using static Tools.ValidationStatus;
 
 namespace Tools {
-    public class Property<TValue> : PropertyBase<TValue>, IValidate {
+    public class Property<TValue> : PropertyBase<TValue>, IValidate, IRevertible {
         PropertyBase<ValidationDataErrorInfo> _errors;
         Func<IObservable<TValue>, IObservable<KeyValuePair<TValue, ValidationDataErrorInfo>>> _validator;
 

@@ -9,7 +9,6 @@ using System.Reactive.Subjects;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static Tools.AsyncFunctionStatus;
 
 namespace Tools {
     //public class Validator<T> : PropertyBase<IValidationStatus> {

@@ -30,7 +30,7 @@ namespace Client {
         protected abstract IObservable<IEnumerable<IValidate>> Items { get; }
         protected abstract IObservable<ValidationDataErrorInfo> CrossPropertyErrors { get; }
 
-        protected IObservable<IEnumerable<KeyValuePair<IValidate,ValidationDataErrorInfo>>> LatestChildrenValidationStatus { get; }
+        protected IObservable<IEnumerable<KeyValuePair<IValidate, ValidationDataErrorInfo>>> LatestChildrenValidationStatus { get; }
 
         public IReadOnlyProperty<ValidationDataErrorInfo> Errors
         {
@@ -40,6 +40,7 @@ namespace Client {
             }
         }
     }
+
 
     public class Address2 : ValidatableModel {
         public Property<string> Street { get; }
@@ -72,62 +73,61 @@ namespace Client {
         }
     }
 
+    // MAJOR issues
+    // Data gets updated BEFORE error status and has changes; Observable.CombineLatest doesn't work!
+    // Weird behavior on HasErrors | IsValid == IsValid
     public class Address : Model, IValidate, IRevertible {
-        PropertyBase<ValidationDataErrorInfo> _errors;
-
+        // try SWITCH statement
         public Address() {
             Street = new Property<string>(defaultValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
             City = new Property<string>(defaultValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
             Zip = new Property<string>(defaultValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
-
-            // could create some of this automatically
-            var latestStreet = Observable.CombineLatest(Street, Street.Errors, (e, errors) => new { Item = e, Errors = errors });
-            var latestCity = Observable.CombineLatest(City, City.Errors, (e, errors) => new { Item = e, Errors = errors });
-            var latestZip = Observable.CombineLatest(Zip, Zip.Errors, (e, errors) => new { Item = e, Errors = errors });
-            _errors = new PropertyBase<ValidationDataErrorInfo>(
-                value: null,
-                values: Observable
-                .CombineLatest(latestStreet, latestCity, latestZip, (s, c, z) => new { Street = s, City = c, Zip = z })
-                .Select(i => {
-                    var descendentStatus = new ValidationDataErrorInfo(new ValidationDataErrorInfo[] { i.Street.Errors, i.City.Errors, i.Zip.Errors }).Status; // weird how this throws away Errors, Exception
-                    if (i.City.Errors.HasErrors != false || i.Street.Errors.HasErrors != false || i.Zip.Errors.HasErrors != false) {
-                        return new ValidationDataErrorInfo(
-                            status: ValidationStatus.HasErrors, // should be a different option, like BlockedOn; weird since Errors list is empty or maybe not necessary?
-                            descendentStatus: descendentStatus,
-                            errors: null,
-                            exception: null);
-                    }
-                    else {
-                        bool streetCityStartSameLetter = i.Street.Item.ToLower().Take(1).SequenceEqual(i.City.Item.ToLower().Take(1));
-                        return new ValidationDataErrorInfo(
-                            status: streetCityStartSameLetter ? ValidationStatus.IsValid : ValidationStatus.HasErrors, // should be a different option, like BlockedOn; weird since Errors list is empty or maybe not necessary?
-                            descendentStatus: descendentStatus,
-                            errors: streetCityStartSameLetter ? null : new string[] { "Street and city don't start with same letter" },
-                            exception: null);
-                    }
-                }));
-
             HasChanges = new Property<bool>(
-                defaultValue: false,
-                values: Observable.CombineLatest(Street.HasChanges, City.HasChanges, Zip.HasChanges).Select(i => i.Any(j => j)));
-            AddToDisposables(Street, City, Zip);
+                values: Observable.CombineLatest(ChangeTrackers().Select(i => i.HasChanges)).Select(i => i.Contains(true)));
+            Errors = new PropertyBase<ValidationDataErrorInfo>(
+                values:Observable
+                    .CombineLatest(Street, Street.Errors, City, City.Errors, Zip, Zip.Errors, (s, se, c, ce, z, ze) => {
+                        var result = new { Street = s, City = c, Zip = z, ErrorStatus = se.CompositeStatus | ce.CompositeStatus | ze.CompositeStatus };
+                        return result;
+                    })
+                    .Select(i => {
+                        if (i.ErrorStatus == ValidationStatus.IsValid) {
+                            bool streetCityStartSameLetter = i.Street.ToLower()[0] == i.City.ToLower()[0];
+                            return new ValidationDataErrorInfo(
+                                status: streetCityStartSameLetter ? ValidationStatus.IsValid : ValidationStatus.HasErrors,
+                                descendentStatus: i.ErrorStatus,
+                                errors: streetCityStartSameLetter ? null : new string[] { "Street and city don't start with same letter" },
+                                exception: null);
+                        }
+                        else {
+                            return new ValidationDataErrorInfo(status: ValidationStatus.Blocked, descendentStatus: null, errors: null, exception: null);
+                        }
+                    }));
+            AddToDisposables(Street, City, Zip, Errors);
         }
+
+        private IEnumerable<IRevertible> ChangeTrackers() {
+            yield return Street;
+            yield return City;
+            yield return Zip;
+        }
+
         public Property<string> Street { get; }
         public Property<string> City { get; }
         public Property<string> Zip { get; }
-        public IReadOnlyProperty<ValidationDataErrorInfo> Errors => _errors;
+        public IReadOnlyProperty<ValidationDataErrorInfo> Errors { get; }
         public IReadOnlyProperty<bool> HasChanges { get; }
 
         public void AcceptChanges() {
-            Street.AcceptChanges();
-            City.AcceptChanges();
-            Zip.AcceptChanges();
+            foreach(var c in ChangeTrackers()) {
+                c.AcceptChanges();
+            }
         }
 
         public void RejectChanges() {
-            Street.RejectChanges();
-            City.RejectChanges();
-            Zip.RejectChanges();
+            foreach (var c in ChangeTrackers()) {
+                c.RejectChanges();
+            }
         }
     }
 
