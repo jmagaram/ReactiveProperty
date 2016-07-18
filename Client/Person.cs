@@ -1,24 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Tools;
 using System.Reactive.Linq;
-using System.Reactive;
-using System.Reactive.Threading;
 using System.Windows.Input;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using System.Reactive.Subjects;
 using System.Collections.Immutable;
-using System.ComponentModel;
-using System.Reactive.Concurrency;
-using System.Threading;
 using System.Diagnostics;
 
 namespace Client {
-    public class Person : Model, IValidate {
+    public class Person : Model {
         Property<string> _firstName;
         Property<string> _lastName;
         Property<string> _fullName;
@@ -33,6 +23,7 @@ namespace Client {
         DelegateCommand _rejectAll;
 
         public Person() {
+            ILogger logger = new DelegateLogger(i => Debug.WriteLine(i));
             _address = new Address();
             _firstName = new Property<string>(
                 defaultValue: string.Empty,
@@ -42,7 +33,7 @@ namespace Client {
                 validator: new StringValidator(isRequired: true, minLength: 3, maxLength: 10).Validate);
             _fullName = new Property<string>(
                 defaultValue: string.Empty,
-                values: Observable.CombineLatest(_firstName, _lastName, (f, l) => $"{f} {l}"));
+                values: Observable.CombineLatest(_firstName, _lastName, (f, l) => $"{f} {l}").Log(logger,"fullname"));
             _isMarried = new Property<bool>(defaultValue: false);
             _marriageYear = new Property<int>(
                 defaultValue: 2000,
@@ -57,12 +48,13 @@ namespace Client {
                         .Select(i => {
                             bool isOk = string.IsNullOrWhiteSpace(i) || i.ToLower().EndsWith(".com");
                             string[] errors = isOk ? new string[] { } : new string[] { "Does not end with .com but should" };
-                            ValidationDataErrorInfo errorInfo = new ValidationDataErrorInfo(
+                            ValidationDataErrorInfo<string> errorInfo = new ValidationDataErrorInfo<string>(
+                                value: i,
                                 status: isOk ? ValidationStatus.IsValid : ValidationStatus.HasErrors,
                                 descendentStatus: null,
                                 errors: errors,
                                 exception: null);
-                            return new KeyValuePair<string, ValidationDataErrorInfo>(i, errorInfo);
+                            return errorInfo;
                         })
                         .ObserveOnDispatcher();
                 });
@@ -160,15 +152,5 @@ namespace Client {
         public Address Address => _address;
         public ICommand AcceptAll => _acceptAll;
         public ICommand RejectAll => _rejectAll;
-
-
-
-        public IReadOnlyProperty<ValidationDataErrorInfo> Errors
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-        }
     }
 }

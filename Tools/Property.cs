@@ -6,14 +6,11 @@ using System.Reactive.Linq;
 using static Tools.ValidationStatus;
 
 namespace Tools {
-    public class Property<TValue> : PropertyBase<TValue>, IValidate, IRevertible {
-        PropertyBase<ValidationDataErrorInfo> _errors;
-        Func<IObservable<TValue>, IObservable<KeyValuePair<TValue, ValidationDataErrorInfo>>> _validator;
-
+    public class Property<TValue> : PropertyBase<TValue>, IValidate<TValue>, IRevertible {
         public Property(
             TValue defaultValue = default(TValue),
             IObservable<TValue> values = null,
-            Func<IObservable<TValue>, IObservable<KeyValuePair<TValue, ValidationDataErrorInfo>>> asyncValidator = null,
+            Func<IObservable<TValue>, IObservable<ValidationDataErrorInfo<TValue>>> asyncValidator = null,
             Func<TValue, IEnumerable> validator = null,
             IObservable<bool> isEnabled = null,
             IObservable<bool> isVisible = null)
@@ -23,50 +20,37 @@ namespace Tools {
             HasChanges = new PropertyBase<bool>(values: Observable.CombineLatest(Original, Values, (o, c) => !Equals(o, c)));
             IsVisible = new PropertyBase<bool>(value: true, values: isVisible);
             IsEnabled = new PropertyBase<bool>(value: true, values: isEnabled);
-            _validator = asyncValidator != null ? asyncValidator : validator != null ? SyncValidator(validator) : AlwaysValid;
+
+            IObservable<ValidationDataErrorInfo<TValue>> errorValues = null;
+            if (validator == null && asyncValidator == null) {
+                errorValues = Values.Select(i => new ValidationDataErrorInfo<TValue>(value: i, errors: null));
+            }
+            else if (validator != null) {
+                errorValues = Values.Select(i => new ValidationDataErrorInfo<TValue>(value: i, errors: validator(i)));
+            }
+            else {
+                var valuesPublished = Values.Publish().RefCount();
+                var validations = asyncValidator(Values);
+                errorValues = valuesPublished.GroupJoin(
+                    validations,
+                    (_) => valuesPublished,
+                    (_) => Observable.Empty<ValidationDataErrorInfo<TValue>>(),
+                    (q, a) =>
+                        a
+                        .Where(j => Equals(q, j.Value))
+                        .StartWith(new ValidationDataErrorInfo<TValue>(value: q, status: Running, descendentStatus: null, errors: null, exception: null))
+                    )
+                    .Concat(); // or selectmany or merge? observable.switch?
+            }
+            Errors = new PropertyBase<ValidationDataErrorInfo<TValue>>(value: new ValidationDataErrorInfo<TValue>(
+                value: default(TValue), status: ValidationStatus.Unknown, descendentStatus: null, errors: null, exception: null),
+                values: errorValues);
             // MUST set default error to null (no errors) or else async validators have a Null state until they get going
-            // or maybe better approach is to set it to unknown?
-            _errors = new PropertyBase<ValidationDataErrorInfo>(new ValidationDataErrorInfo(ValidationStatus.Unknown,descendentStatus:null,errors:null,exception:null)); 
+
             AddToDisposables(Original, Errors, HasChanges, IsVisible, IsEnabled);
-            Observable
-                .CombineLatest(this.Values, _validator(this.Values), (v, r) => new { LatestValue = v, ValidatedValue = r.Key, ErrorStatus = r.Value })
-                .Select(i => {
-                    if (!Equals(i.LatestValue, i.ValidatedValue) || i.ErrorStatus.Status == Running) {
-                        return new ValidationDataErrorInfo(status: Running, descendentStatus: null, errors: null, exception: null);
-                    }
-                    else {
-                        switch (i.ErrorStatus.Status) {
-                            case Running: throw new NotImplementedException("This code should never be executed.");
-                            case Canceled: return new ValidationDataErrorInfo(status: Canceled, descendentStatus: null, errors: null, exception: null);
-                            case Faulted: return new ValidationDataErrorInfo(status: Faulted, descendentStatus: null, errors: null, exception: i.ErrorStatus.Exception);
-                            case IsValid: return new ValidationDataErrorInfo(status: IsValid, descendentStatus: null, errors: null, exception: null);
-                            case HasErrors: return new ValidationDataErrorInfo(status: HasErrors, descendentStatus: null, errors: i.ErrorStatus.Errors, exception: null);
-                            default: throw new NotImplementedException(); // The result might have more than one bit set.
-                        }
-                    }
-                })
-                .Subscribe(i => _errors.Value = i)
-                .AddTo(Disposables);
         }
 
-        static Func<IObservable<TValue>, IObservable<KeyValuePair<TValue, ValidationDataErrorInfo>>> SyncValidator(Func<TValue, IEnumerable> synchronousValidator) {
-            return (IObservable<TValue> values) =>
-                     values
-                     .Select(i => new KeyValuePair<TValue, ValidationDataErrorInfo>(key: i, value: new ValidationDataErrorInfo(errors: synchronousValidator(i))));
-        }
-
-        static IObservable<KeyValuePair<TValue, ValidationDataErrorInfo>> AlwaysValid(IObservable<TValue> values) {
-            return
-                values
-                .Select(i => new KeyValuePair<TValue, ValidationDataErrorInfo>(
-                 key: i,
-                 value: new ValidationDataErrorInfo(status: IsValid, errors: Enumerable.Empty<object>(), descendentStatus: null, exception: null)));
-        }
-
-        public IReadOnlyProperty<ValidationDataErrorInfo> Errors => _errors;
-
-        public void ForceValidation() => ResubmitCurrentValue();
-
+        public IReadOnlyProperty<IValidationDataErrorInfo<TValue>> Errors { get; }
         public PropertyBase<bool> IsVisible { get; }
         public PropertyBase<bool> IsEnabled { get; }
         private PropertyBase<TValue> Original { get; }

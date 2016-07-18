@@ -1,5 +1,5 @@
 ﻿namespace Tools {
-    public interface IValidate {
-        IReadOnlyProperty<ValidationDataErrorInfo> Errors { get; }
+    public interface IValidate<T> {
+        IReadOnlyProperty<IValidationDataErrorInfo<T>> Errors { get; }
     }
 }

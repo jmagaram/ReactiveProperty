@@ -1,25 +1,24 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Tools {
-    public class ValidationDataErrorInfo {
-        public ValidationDataErrorInfo(ValidationStatus status, ValidationStatus? descendentStatus, IEnumerable errors, Exception exception) {
+    public class ValidationDataErrorInfo<T> : IValidationDataErrorInfo<T> {
+        public ValidationDataErrorInfo(T value, ValidationStatus status, ValidationStatus? descendentStatus, IEnumerable errors, Exception exception) {
             Status = status;
             DescendentStatus = descendentStatus;
             Errors = errors?.Cast<object>().ToArray() ?? new object[] { };
             Exception = exception;
+            Value = value;
         }
 
-        public ValidationDataErrorInfo(IEnumerable errors) : this(
+        public ValidationDataErrorInfo(T value, IEnumerable errors) : this(
+            value: value,
             status: (errors == null) ? ValidationStatus.IsValid : errors.Cast<object>().Any() ? ValidationStatus.HasErrors : ValidationStatus.IsValid,
             descendentStatus: null,
             errors: errors,
             exception: null) {
         }
-
-        public ValidationDataErrorInfo(IEnumerable<ValidationDataErrorInfo> items) : this(status: items?.Select(i => i.CompositeStatus).Aggregate((j, k) => j | k) ?? ValidationStatus.IsValid, descendentStatus: null, errors: null, exception: null) { }
 
         public ValidationStatus Status { get; }
 
@@ -32,5 +31,7 @@ namespace Tools {
         public IEnumerable Errors { get; }
 
         public Exception Exception { get; }
+
+        public T Value { get; }
     }
 }

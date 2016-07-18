@@ -1,20 +1,11 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using Tools;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Windows.UI;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Navigation;
 
 // The User Control item template is documented at http://go.microsoft.com/fwlink/?LinkId=234236
 
@@ -32,9 +23,9 @@ namespace Client {
 
         public bool OnlyShowStatusWhenUnknown { get; set; } = true;
 
-        public IReadOnlyProperty<ValidationDataErrorInfo> ErrorInfo
+        public IReadOnlyProperty<IValidationDataErrorInfo> ErrorInfo
         {
-            get { return (IReadOnlyProperty<ValidationDataErrorInfo>)GetValue(ErrorInfoProperty); }
+            get { return (IReadOnlyProperty<IValidationDataErrorInfo>)GetValue(ErrorInfoProperty); }
             set { SetValue(ErrorInfoProperty, value); }
         }
 
@@ -42,9 +33,9 @@ namespace Client {
         private static string ErrorsToString(IEnumerable errors) => errors?.Cast<object>().Select(i => i.ToString()).Aggregate(string.Empty, (i, j) => $"{i},{j}") ?? string.Empty;
 
         public static readonly DependencyProperty ErrorInfoProperty =
-            DependencyProperty.Register("ErrorInfo", typeof(IReadOnlyProperty<ValidationDataErrorInfo>), typeof(ErrorViewer), new PropertyMetadata(null, (d, args) => {
+            DependencyProperty.Register("ErrorInfo", typeof(IReadOnlyProperty<IValidationDataErrorInfo>), typeof(ErrorViewer), new PropertyMetadata(null, (d, args) => {
                 ErrorViewer viewer = d as ErrorViewer;
-                IReadOnlyProperty<ValidationDataErrorInfo> value = args.NewValue as IReadOnlyProperty<ValidationDataErrorInfo>;
+                IReadOnlyProperty<IValidationDataErrorInfo> value = args.NewValue as IReadOnlyProperty<IValidationDataErrorInfo>;
                 if (value != null) {
                     value.Subscribe(i => {
                         if (i == null) return;

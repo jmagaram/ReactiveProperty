@@ -1,6 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 
@@ -12,26 +10,25 @@ namespace Tools {
             _subject = new BehaviorSubject<T>(value);
             _subject.AddTo(Disposables);
             _subject
-                .Subscribe(i => { OnPropertyChanged(nameof(Value)); })
+                .DistinctUntilChanged()
+                .Subscribe(i => OnPropertyChanged(nameof(Value))) // ObserveOn?
                 .AddTo(Disposables);
             if (values != null) {
                 values
-                    .Subscribe(i => Value = i)
-                    .AddTo(Disposables);
+                .Subscribe(i => Value = i)
+                .AddTo(Disposables);
             }
         }
 
         public T Value
         {
             get { return _subject.Value; }
-            set
-            {
-                if (!Equals(value, _subject.Value)) {
-                    _subject.OnNext(value);
-                }
-            }
+            set { _subject.OnNext(value); }
         }
 
+        /// <summary>
+        /// Forces error validation to happen again in case it was cancelled or faulted.
+        /// </summary>
         protected void ResubmitCurrentValue() => _subject.OnNext(Value);
 
         protected IObservable<T> Values => _subject.AsObservable();

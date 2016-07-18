@@ -11,6 +11,46 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Tools {
+    public class VersionedProperty<T> : PropertyBase<Versioned<T>> {
+        int _version = 0;
+
+        public VersionedProperty(T value) : base(value: new Versioned<T>(value, -1)) { }
+
+        public new T Value
+        {
+            get { return base.Value.Value; }
+            set { base.Value = new Versioned<T>(value, Interlocked.Increment(ref _version)); }
+        }
+    }
+
+    public class Versioned<T> {
+        public Versioned(T value, int versionNumber) {
+            Value = value;
+            VersionNumber = versionNumber;
+        }
+
+        public T Value { get; }
+        public int VersionNumber { get; }
+    }
+
+    public class CalculatedProperty<TInput, TOutput> : PropertyBase<IFunctionResult<TInput, TOutput>> {
+        public CalculatedProperty(IObservable<TInput> values, Func<IObservable<TInput>, IObservable<IFunctionResult<TInput, TOutput>>> transform) : base(
+            values: transform(values)) {
+        }
+    }
+
+    public interface IFunctionResult<TInput, TOutput> {
+        TInput Input { get; }
+        TOutput Output { get; }
+    }
+
+    public class FunctionResult<TInput, TOutput> : IFunctionResult<TInput, TOutput> {
+        public TInput Input { get; set; }
+        public TOutput Output { get; set; }
+    }
+
+    // challenge - doing Observable.CombineLatest on both source and calculation
+
     //public class Validator<T> : PropertyBase<IValidationStatus> {
     //    public Validator(IObservable<T> values, Func<IObservable<T>, IObservable<KeyValuePair<T, IValidationStatus>>> validator) : base(
     //        values:
