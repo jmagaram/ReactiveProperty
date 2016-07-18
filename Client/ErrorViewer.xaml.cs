@@ -49,11 +49,14 @@ namespace Client {
                             viewer.errorMessage.Text = $"{StatusToString(x.Status)} {ErrorsToString(x.Errors)}";
                             viewer.errorMessage.Visibility = (x.Status != ValidationStatus.IsValid) ? Visibility.Visible : Visibility.Collapsed;
                         }
-                        if (viewer.ShowCompositeStatus && (x.CompositeStatus != ValidationStatus.IsValid || !viewer.OnlyShowStatusWhenUnknown)) {
+                        if (viewer.ShowCompositeStatus && (x.HasErrors != false || !viewer.OnlyShowStatusWhenUnknown)) {
                             viewer.compositeStatus.Visibility = Visibility.Visible;
-                            viewer.compositeShape.Fill = x.CompositeStatus.HasFlag(ValidationStatus.HasErrors) ? errorBrush : ValidationStatus.Unknown.HasFlag(x.CompositeStatus) ? unknownBrush : goodBrush;
+                            viewer.compositeShape.Fill =
+                                x.HasErrors == true ? errorBrush
+                                : x.HasErrors == null ? unknownBrush :
+                                goodBrush;
                             viewer.compositeErrorMessage.Text = $"OVERALL: {StatusToString(x.CompositeStatus)}";
-                            viewer.compositeErrorMessage.Visibility = (x.CompositeStatus != ValidationStatus.IsValid) ? Visibility.Visible : Visibility.Collapsed;
+                            viewer.compositeErrorMessage.Visibility = (x.HasErrors != true) ? Visibility.Visible : Visibility.Collapsed;
                         }
                         else {
                             viewer.compositeStatus.Visibility = Visibility.Collapsed;

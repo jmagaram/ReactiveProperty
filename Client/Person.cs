@@ -7,8 +7,9 @@ using System.Windows.Input;
 using System.Collections.Immutable;
 using System.Diagnostics;
 
+//Model, IValidate<Address>, IRevertible
 namespace Client {
-    public class Person : Model {
+    public class Person : Model, IRevertible, IValidate<Person> {
         Property<string> _firstName;
         Property<string> _lastName;
         Property<string> _fullName;
@@ -33,7 +34,7 @@ namespace Client {
                 validator: new StringValidator(isRequired: true, minLength: 3, maxLength: 10).Validate);
             _fullName = new Property<string>(
                 defaultValue: string.Empty,
-                values: Observable.CombineLatest(_firstName, _lastName, (f, l) => $"{f} {l}").Log(logger,"fullname"));
+                values: Observable.CombineLatest(_firstName, _lastName, (f, l) => $"{f} {l}"));
             _isMarried = new Property<bool>(defaultValue: false);
             _marriageYear = new Property<int>(
                 defaultValue: 2000,
@@ -91,53 +92,57 @@ namespace Client {
                     _nicknameToAdd.Value = string.Empty;
                 },
                 canExecute: _nicknameToAdd.Errors.Select(i => i.Status == ValidationStatus.IsValid));
-            var anyErrors = Observable.CombineLatest(
-                _firstName.Errors.Select(j => j.Status != ValidationStatus.IsValid),
-                _lastName.Errors.Select(j => j.Status != ValidationStatus.IsValid),
-                _nicknames.Errors.Select(j => j.Status != ValidationStatus.IsValid),
-                _isMarried.Errors.Select(j => j.Status != ValidationStatus.IsValid),
-                _website.Errors.Select(j => j.Status != ValidationStatus.IsValid), // why need the null check here but not elsewhere?
-                _address.Errors.Select(j => j.Status != ValidationStatus.IsValid),
-                _marriageYear.Errors.Select(j => j.Status != ValidationStatus.IsValid))
-                .Select(i => i.Any(j => j != false));
 
+            // Marriage year conditional
+            Errors = new PropertyBase<ValidationDataErrorInfo<Person>>(
+                value: new ValidationDataErrorInfo<Person>(value: this, status: ValidationStatus.Blocked, descendentStatus: ValidationStatus.None, errors: null, exception: null),
+                values: Observable
+                    .CombineLatest(new IValidate[] { Address, FirstName, LastName, FullName, IsMarried, Nicknames, Website }.Select(i => i.Errors))
+                    .Select(i => i.Select(j => j.CompositeStatus))
+                    .Select(i => i.Aggregate((a, b) => a | b))
+                    .Log(logger,"errors")
+                    .Select(i => new ValidationDataErrorInfo<Person>(
+                        value: this,
+                        status: ValidationStatus.IsValid,
+                        descendentStatus: i,
+                        errors: null,
+                        exception: null)));
             // NOTE: Not all properties affect whether can accept the form; subforms like nicknameToAdd!
-            //var anyErrors =
-            //    Observable.CombineLatest((new IValidate[] { _firstName, _lastName, _nicknames, _website, _address, _marriageYear }).Select(i => i.Errors.Select(z => z.Status != ValidationStatus.IsValid))).Select(i=>i.Any(j=>j!=false));
-            var anyChanges = Observable.CombineLatest(
-                _firstName.HasChanges,
-                _lastName.HasChanges,
-                _nicknames.HasChanges,
-                _isMarried.HasChanges,
-                _website.HasChanges,
-                _address.HasChanges,
-                _marriageYear.HasChanges)
-                .Select(i => i.Any(j => j));
+            HasChanges = new PropertyBase<bool>(
+                value: false,
+                values:
+                    Observable
+                    .CombineLatest(ChangeTrackers().Select(i => i.HasChanges))
+                    .Select(i => i.Any(j => j == true)));
             _acceptAll = new DelegateCommand(
-                action: () => {
-                    _firstName.AcceptChanges();
-                    _lastName.AcceptChanges();
-                    _nicknames.AcceptChanges();
-                    _isMarried.AcceptChanges();
-                    _marriageYear.AcceptChanges();
-                    _address.AcceptChanges();
-                    _website.AcceptChanges();
-                    //_fullName.AcceptChanges(); // does not make sense. should not be allowed. same with editing. weird.
-                },
-                canExecute: Observable.CombineLatest(anyErrors, anyChanges, (errs, chg) => chg && !errs)
-                );
+                action: () => { AcceptChanges(); },
+                canExecute: Observable.CombineLatest(Errors, HasChanges, (errs, chg) => chg && errs.HasErrors==false));
             _rejectAll = new DelegateCommand(
-                action: () => {
-                    _firstName.RejectChanges();
-                    _lastName.RejectChanges();
-                    _nicknames.RejectChanges();
-                    _isMarried.RejectChanges();
-                    _marriageYear.RejectChanges();
-                    _website.RejectChanges();
-                    _address.RejectChanges();
-                },
-                canExecute: anyChanges);
-            AddToDisposables(_firstName, _lastName, _website);
+                action: () => { RejectChanges(); },
+                canExecute: HasChanges);
+            AddToDisposables(_firstName, _lastName, _fullName, _marriageYear, _isMarried, HasChanges, _website, _nicknames, _nicknameToAdd, _website, Errors);
+        }
+
+        public void AcceptChanges() {
+            foreach (var c in ChangeTrackers()) {
+                c.AcceptChanges();
+            }
+        }
+
+        public void RejectChanges() {
+            foreach (var c in ChangeTrackers()) {
+                c.RejectChanges();
+            }
+        }
+
+        private IEnumerable<IRevertible> ChangeTrackers() {
+            yield return Address;
+            yield return FirstName;
+            yield return LastName;
+            yield return IsMarried;
+            yield return MarriageYear;
+            yield return Nicknames;
+            yield return Website;
         }
 
         public Property<string> FirstName => _firstName;
@@ -152,5 +157,9 @@ namespace Client {
         public Address Address => _address;
         public ICommand AcceptAll => _acceptAll;
         public ICommand RejectAll => _rejectAll;
+        public IReadOnlyProperty<bool> HasChanges { get; }
+        public IReadOnlyProperty<IValidationDataErrorInfo<Person>> Errors { get; }
+
+        IReadOnlyProperty<IValidationDataErrorInfo> IValidate.Errors => Errors;
     }
 }

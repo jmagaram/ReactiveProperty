@@ -22,7 +22,10 @@ namespace Tools {
 
         public ValidationStatus Status { get; }
 
-        public bool? HasErrors => (CompositeStatus == ValidationStatus.IsValid) ? false : (CompositeStatus == ValidationStatus.HasErrors) ? true : (bool?)null;
+        public bool? HasErrors => 
+            (CompositeStatus == ValidationStatus.IsValid) ? false 
+            : (CompositeStatus.HasFlag(ValidationStatus.HasErrors)) ? true 
+            : (bool?)null;
 
         public ValidationStatus? DescendentStatus { get; }
 

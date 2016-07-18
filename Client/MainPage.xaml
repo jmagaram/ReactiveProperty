@@ -56,6 +56,6 @@
         <local:ErrorViewer x:Name="marriageYearErrorViewer" HorizontalAlignment="Left" Margin="238,320,0,0" VerticalAlignment="Top" ErrorInfo="{Binding MarriageYear.Errors, Mode=OneWay}" Width="316"/>
         <local:ErrorViewer x:Name="nicknameListErrorViewer" HorizontalAlignment="Left" Margin="609,420,0,0" VerticalAlignment="Top" ErrorInfo="{Binding Nicknames.Errors, Mode=OneWay}" Width="420"/>
         <local:ErrorViewer x:Name="homeAddressErrorViewer" HorizontalAlignment="Left" Margin="42,640,0,0" VerticalAlignment="Top" ErrorInfo="{Binding Address.Errors, Mode=OneWay}" Width="496"/>
-        <local:ErrorViewer x:Name="overallErrorViewer" HorizontalAlignment="Left" Margin="333,751,0,0" VerticalAlignment="Top" Width="416"/>
+        <local:ErrorViewer ShowCompositeStatus="True" x:Name="overallErrorViewer" HorizontalAlignment="Left" Margin="333,751,0,0" VerticalAlignment="Top" Width="416" ErrorInfo="{Binding Errors, Mode=OneWay}"/>
     </Grid>
 </Page>
