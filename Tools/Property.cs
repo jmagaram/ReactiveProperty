@@ -17,12 +17,7 @@ namespace Tools {
             HasChanges = new PropertyBase<bool>(values: Observable.CombineLatest(Original, Values, (o, c) => !Equals(o, c)));
             IsVisible = new PropertyBase<bool>(value: true, values: isVisible);
             IsEnabled = new PropertyBase<bool>(value: true, values: isEnabled);
-            if (asyncValidator == null) {
-                Errors = new ValidatorProperty<TValue>(Values, validator);
-            }
-            else {
-                Errors = new AsyncValidatorProperty<TValue>(Values, asyncValidator);
-            }
+            Errors = asyncValidator == null ? new ValidatorProperty<TValue>(this,validator) : new ValidatorProperty<TValue>(this,asyncValidator); 
             AddToDisposables(Original, Errors, HasChanges, IsVisible, IsEnabled);
         }
 
