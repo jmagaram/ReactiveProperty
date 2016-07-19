@@ -32,7 +32,7 @@
             </ListView>
         </Border>
         <CheckBox x:Name="isMarried" Content="Is married?" HorizontalAlignment="Left" Margin="12,290,0,0" VerticalAlignment="Top" IsChecked="{Binding IsMarried.Value, Mode=TwoWay}"/>
-        <TextBox Header="Marriage year" x:Name="marriageYear" HorizontalAlignment="Left" Margin="43,322,0,0" TextWrapping="Wrap" Text="{Binding MarriageYear.Value, Mode=TwoWay}" VerticalAlignment="Top" Width="174" IsEnabled="{Binding MarriageYear.IsEnabled.Value}"/>
+        <TextBox Header="Marriage year" x:Name="marriageYear" HorizontalAlignment="Left" Margin="43,322,0,0" TextWrapping="Wrap" Text="{Binding MarriageYear.Value, Mode=TwoWay}" VerticalAlignment="Top" Width="174"/>
         <Button x:Name="acceptAllButton" Content="Accept All" HorizontalAlignment="Left" Margin="13,759,0,0" VerticalAlignment="Top" Width="146" Command="{Binding AcceptAll, Mode=OneWay}"/>
         <Button x:Name="rejectAllButton" Content="Reject All" HorizontalAlignment="Left" Margin="164,759,0,0" VerticalAlignment="Top" Width="150" Command="{Binding RejectAll, Mode=OneWay}"/>
         <TextBox Header="Street" x:Name="street" HorizontalAlignment="Left" Margin="42,575,0,0" TextWrapping="Wrap" Text="{Binding Address.Street.Value, Mode=TwoWay}" VerticalAlignment="Top" Width="223"/>

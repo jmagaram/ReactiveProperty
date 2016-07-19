@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Tools;
 
 namespace Client {
@@ -14,9 +10,9 @@ namespace Client {
     //    Parent could listen for individual pieces though 
     public class Address : Model, IValidate<Address>, IRevertible {
         public Address() {
-            Street = new Property<string>(defaultValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
-            City = new Property<string>(defaultValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
-            Zip = new Property<string>(defaultValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
+            Street = new Revertible<string>(defaultValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
+            City = new Revertible<string>(defaultValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
+            Zip = new Revertible<string>(defaultValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
             HasChanges = new Property<bool>(values: Observable.CombineLatest(ChangeTrackers().Select(i => i.HasChanges)).Select(i => i.Contains(true)));
             var errors = Observable
                 .CombineLatest(Street.Errors, City.Errors, Zip.Errors, (s, c, z) => new { Street = s, City = c, Zip = z })
@@ -35,18 +31,17 @@ namespace Client {
                             exception: null);
                     }
                 });
-            Errors = new PropertyBase<ValidationDataErrorInfo<Address>>(
+            Errors = new Property<ValidationDataErrorInfo<Address>>(
                 values: errors,
                 value: new ValidationDataErrorInfo<Address>(value: null, status: ValidationStatus.None, descendentStatus: null, errors: null, exception: null));
             AddToDisposables(Street, City, Zip, Errors);
         }
 
-        public Property<string> Street { get; }
-        public Property<string> City { get; }
-        public Property<string> Zip { get; }
+        public Revertible<string> Street { get; }
+        public Revertible<string> City { get; }
+        public Revertible<string> Zip { get; }
         public IReadOnlyProperty<IValidationDataErrorInfo<Address>> Errors { get; }
         public IReadOnlyProperty<bool> HasChanges { get; }
-
         IReadOnlyProperty<IValidationDataErrorInfo> IValidate.Errors => Errors;
 
         public void AcceptChanges() {

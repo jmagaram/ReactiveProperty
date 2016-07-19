@@ -5,42 +5,26 @@ using Tools;
 using System.Reactive.Linq;
 using System.Windows.Input;
 using System.Collections.Immutable;
-using System.Diagnostics;
 
 //Model, IValidate<Address>, IRevertible
 namespace Client {
     public class Person : Model, IRevertible, IValidate<Person> {
-        Property<string> _firstName;
-        Property<string> _lastName;
-        Property<string> _fullName;
-        Property<string> _nicknameToAdd;
-        Property<string> _website;
-        Property<ImmutableList<NicknameReport>> _nicknames;
-        Property<bool> _isMarried;
-        Property<int> _marriageYear;
-        Address _address;
-        DelegateCommand _addNickname;
-        DelegateCommand _acceptAll;
-        DelegateCommand _rejectAll;
-
         public Person() {
-            ILogger logger = new DelegateLogger(i => Debug.WriteLine(i));
-            _address = new Address();
-            _firstName = new Property<string>(
+            Address = new Address();
+            FirstName = new Revertible<string>(
                 defaultValue: string.Empty,
                 validator: new StringValidator(isRequired: true, minLength: 3, maxLength: 10).Validate);
-            _lastName = new Property<string>(
+            LastName = new Revertible<string>(
                 defaultValue: string.Empty,
                 validator: new StringValidator(isRequired: true, minLength: 3, maxLength: 10).Validate);
-            _fullName = new Property<string>(
-                defaultValue: string.Empty,
-                values: Observable.CombineLatest(_firstName, _lastName, (f, l) => $"{f} {l}"));
-            _isMarried = new Property<bool>(defaultValue: false);
-            _marriageYear = new Property<int>(
+            FullName = new Property<string>(
+                value: string.Empty,
+                values: Observable.CombineLatest(FirstName, LastName, (f, l) => $"{f} {l}"));
+            IsMarried = new Revertible<bool>(defaultValue: false);
+            MarriageYear = new Revertible<int>(
                 defaultValue: 2000,
-                validator: new RangeValidator<int>(minimum: 1900, maximum: DateTime.Now.Year).Validate,
-                isEnabled: _isMarried);
-            _website = new Property<string>(
+                validator: new RangeValidator<int>(minimum: 1900, maximum: DateTime.Now.Year).Validate);
+            Website = new Revertible<string>(
                 defaultValue: "www.google.com",
                 asyncValidator: (values) => {
                     return
@@ -59,10 +43,10 @@ namespace Client {
                         })
                         .ObserveOnDispatcher();
                 });
-            _nicknameToAdd = new Property<string>(
+            NicknameToAdd = new Revertible<string>(
                 defaultValue: string.Empty,
                 validator: new StringValidator(isRequired: true, minLength: 3).Validate);
-            _nicknames = new Property<ImmutableList<NicknameReport>>(
+            Nicknames = new Revertible<ImmutableList<NicknameReport>>(
                 defaultValue: ImmutableList<NicknameReport>.Empty,
                 validator: (list) => {
                     List<string> errors = new List<string>();
@@ -79,28 +63,25 @@ namespace Client {
                     }
                     return errors;
                 });
-            _addNickname = new DelegateCommand(
+            AddNickname = new DelegateCommand(
                 action: () => {
-                    string nameToAdd = _nicknameToAdd.Value;
+                    string nameToAdd = NicknameToAdd.Value;
                     NicknameReport report = new NicknameReport(
                         name: nameToAdd,
                         delete: new DelegateCommand(action: () => {
-                            var item = _nicknames.Value.First(j => j.Name == nameToAdd);
-                            _nicknames.Value = _nicknames.Value.Remove(item);
+                            var item = Nicknames.Value.First(j => j.Name == nameToAdd);
+                            Nicknames.Value = Nicknames.Value.Remove(item);
                         }));
-                    _nicknames.Value = _nicknames.Value.Add(report);
-                    _nicknameToAdd.Value = string.Empty;
+                    Nicknames.Value = Nicknames.Value.Add(report);
+                    NicknameToAdd.Value = string.Empty;
                 },
-                canExecute: _nicknameToAdd.Errors.Select(i => i.Status == ValidationStatus.IsValid));
-
-            // Marriage year conditional
-            Errors = new PropertyBase<ValidationDataErrorInfo<Person>>(
+                canExecute: NicknameToAdd.Errors.Select(i => i.Status == ValidationStatus.IsValid));
+            Errors = new Property<ValidationDataErrorInfo<Person>>(
                 value: new ValidationDataErrorInfo<Person>(value: this, status: ValidationStatus.Blocked, descendentStatus: ValidationStatus.None, errors: null, exception: null),
                 values: Observable
                     .CombineLatest(new IValidate[] { Address, FirstName, LastName, FullName, IsMarried, Nicknames, Website }.Select(i => i.Errors))
                     .Select(i => i.Select(j => j.CompositeStatus))
                     .Select(i => i.Aggregate((a, b) => a | b))
-                    .Log(logger,"errors")
                     .Select(i => new ValidationDataErrorInfo<Person>(
                         value: this,
                         status: ValidationStatus.IsValid,
@@ -108,19 +89,19 @@ namespace Client {
                         errors: null,
                         exception: null)));
             // NOTE: Not all properties affect whether can accept the form; subforms like nicknameToAdd!
-            HasChanges = new PropertyBase<bool>(
+            HasChanges = new Property<bool>(
                 value: false,
                 values:
                     Observable
                     .CombineLatest(ChangeTrackers().Select(i => i.HasChanges))
                     .Select(i => i.Any(j => j == true)));
-            _acceptAll = new DelegateCommand(
+            AcceptAll = new DelegateCommand(
                 action: () => { AcceptChanges(); },
                 canExecute: Observable.CombineLatest(Errors, HasChanges, (errs, chg) => chg && errs.HasErrors==false));
-            _rejectAll = new DelegateCommand(
+            RejectAll = new DelegateCommand(
                 action: () => { RejectChanges(); },
                 canExecute: HasChanges);
-            AddToDisposables(_firstName, _lastName, _fullName, _marriageYear, _isMarried, HasChanges, _website, _nicknames, _nicknameToAdd, _website, Errors);
+            AddToDisposables(FirstName, LastName, FullName, MarriageYear, IsMarried, HasChanges, Website, Nicknames, NicknameToAdd, Website, Errors);
         }
 
         public void AcceptChanges() {
@@ -145,21 +126,20 @@ namespace Client {
             yield return Website;
         }
 
-        public Property<string> FirstName => _firstName;
-        public Property<string> LastName => _lastName;
-        public Property<string> FullName => _fullName;
-        public Property<bool> IsMarried => _isMarried;
-        public Property<string> Website => _website;
-        public Property<int> MarriageYear => _marriageYear;
-        public ICommand AddNickname => _addNickname;
-        public Property<string> NicknameToAdd => _nicknameToAdd;
-        public Property<ImmutableList<NicknameReport>> Nicknames => _nicknames;
-        public Address Address => _address;
-        public ICommand AcceptAll => _acceptAll;
-        public ICommand RejectAll => _rejectAll;
+        public Revertible<string> FirstName { get; }
+        public Revertible<string> LastName { get; }
+        public Property<string> FullName { get; }
+        public Revertible<bool> IsMarried { get; }
+        public Revertible<string> Website { get; }
+        public Revertible<int> MarriageYear { get; }
+        public DelegateCommand AddNickname { get; }
+        public Revertible<string> NicknameToAdd { get; }
+        public Revertible<ImmutableList<NicknameReport>> Nicknames { get; }
+        public Address Address { get; }
+        public ICommand AcceptAll { get; }
+        public ICommand RejectAll { get; }
         public IReadOnlyProperty<bool> HasChanges { get; }
         public IReadOnlyProperty<IValidationDataErrorInfo<Person>> Errors { get; }
-
         IReadOnlyProperty<IValidationDataErrorInfo> IValidate.Errors => Errors;
     }
 }

@@ -9,4 +9,8 @@ namespace Tools {
         void AcceptChanges();
         void RejectChanges();
     }
+
+    public interface ITrackChanges {
+        IReadOnlyProperty<bool> HasChanges { get; }
+    }
 }

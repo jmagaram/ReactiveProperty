@@ -3,21 +3,16 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 
 namespace Tools {
-    public class PropertyBase<T> : Model, IReadOnlyProperty<T> {
+    public class PropertyBase<T> : Model, IEditableProperty<T> {
         BehaviorSubject<T> _subject;
 
-        public PropertyBase(T value = default(T), IObservable<T> values = null) {
+        public PropertyBase(T value = default(T)) {
             _subject = new BehaviorSubject<T>(value);
             _subject.AddTo(Disposables);
             _subject
                 .DistinctUntilChanged()
                 .Subscribe(i => OnPropertyChanged(nameof(Value))) // ObserveOn?
                 .AddTo(Disposables);
-            if (values != null) {
-                values
-                .Subscribe(i => Value = i)
-                .AddTo(Disposables);
-            }
         }
 
         public T Value
@@ -25,11 +20,6 @@ namespace Tools {
             get { return _subject.Value; }
             set { _subject.OnNext(value); }
         }
-
-        /// <summary>
-        /// Forces error validation to happen again in case it was cancelled or faulted.
-        /// </summary>
-        protected void ResubmitCurrentValue() => _subject.OnNext(Value);
 
         protected IObservable<T> Values => _subject.AsObservable();
 
@@ -39,4 +29,5 @@ namespace Tools {
 
         public static implicit operator T(PropertyBase<T> p) => p.Value;
     }
+
 }
