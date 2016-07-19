@@ -5,7 +5,7 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 
 namespace Tools {
-    public class Model {
+    public class Model : IDisposable {
         CompositeDisposable _disposables;
         bool _isDisposed;
 
