@@ -4,17 +4,24 @@ using System.Linq;
 
 namespace Tools {
     public class ValidationDataErrorInfo<T> : IValidationDataErrorInfo<T> {
-        public ValidationDataErrorInfo(T value, ValidationStatus status, ValidationStatus? descendentStatus, IEnumerable errors, Exception exception) {
+        static object[] _noErrors = new object[] { };
+
+        public ValidationDataErrorInfo(
+            T value,
+            ValidationStatus status,
+            ValidationStatus? descendentStatus = null,
+            IEnumerable errors = null,
+            Exception exception = null) {
+            Value = value;
             Status = status;
             DescendentStatus = descendentStatus;
-            Errors = errors?.Cast<object>().ToArray() ?? new object[] { };
+            Errors = errors?.Cast<object>().ToArray() ?? _noErrors;
             Exception = exception;
-            Value = value;
         }
 
         public ValidationDataErrorInfo(T value, IEnumerable errors) : this(
             value: value,
-            status: (errors == null) ? ValidationStatus.IsValid : errors.Cast<object>().Any() ? ValidationStatus.HasErrors : ValidationStatus.IsValid,
+            status: (errors == null || errors.Cast<object>().Any()) ? ValidationStatus.HasErrors : ValidationStatus.IsValid,
             descendentStatus: null,
             errors: errors,
             exception: null) {
@@ -22,9 +29,9 @@ namespace Tools {
 
         public ValidationStatus Status { get; }
 
-        public bool? HasErrors => 
-            (CompositeStatus == ValidationStatus.IsValid) ? false 
-            : (CompositeStatus.HasFlag(ValidationStatus.HasErrors)) ? true 
+        public bool? HasErrors =>
+            (CompositeStatus == ValidationStatus.IsValid) ? false
+            : (CompositeStatus.HasFlag(ValidationStatus.HasErrors)) ? true
             : (bool?)null;
 
         public ValidationStatus? DescendentStatus { get; }

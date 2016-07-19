@@ -47,7 +47,6 @@
     <Compile Include="IEditableProperty.cs" />
     <Compile Include="IRevertible.cs" />
     <Compile Include="IValidate.cs" />
-    <Compile Include="IValidationDataErrorInfo.cs" />
     <Compile Include="Model.cs" />
     <Compile Include="NotifyTaskCompletion.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

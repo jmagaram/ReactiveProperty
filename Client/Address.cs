@@ -10,16 +10,16 @@ namespace Client {
     //    Parent could listen for individual pieces though 
     public class Address : Model, IValidate<Address>, IRevertible {
         public Address() {
-            Street = new Revertible<string>(defaultValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
-            City = new Revertible<string>(defaultValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
-            Zip = new Revertible<string>(defaultValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
+            Street = new Revertible<string>(value: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
+            City = new Revertible<string>(value: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
+            Zip = new Revertible<string>(value: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
             HasChanges = new Property<bool>(values: Observable.CombineLatest(ChangeTrackers().Select(i => i.HasChanges)).Select(i => i.Contains(true)));
             var errors = Observable
                 .CombineLatest(Street.Errors, City.Errors, Zip.Errors, (s, c, z) => new { Street = s, City = c, Zip = z })
                 .Select(i => {
                     var compositeStatus = i.Street.CompositeStatus | i.City.CompositeStatus | i.Zip.CompositeStatus;
                     if (compositeStatus != ValidationStatus.IsValid) {
-                        return new ValidationDataErrorInfo<Address>(value: this, status: ValidationStatus.Blocked, descendentStatus: compositeStatus, errors: null, exception: null);
+                        return new ValidationDataErrorInfo<Address>(value: this, status: ValidationStatus.Blocked, descendentStatus: compositeStatus);
                     }
                     else {
                         bool streetCityStartSameLetter = i.Street.Value.ToLower()[0] == i.City.Value.ToLower()[0];
@@ -27,21 +27,20 @@ namespace Client {
                             value: this,
                             status: streetCityStartSameLetter ? ValidationStatus.IsValid : ValidationStatus.HasErrors,
                             descendentStatus: compositeStatus,
-                            errors: streetCityStartSameLetter ? null : new string[] { "Street and city don't start with same letter" },
-                            exception: null);
+                            errors: streetCityStartSameLetter ? null : new string[] { "Street and city don't start with same letter" });
                     }
                 });
             Errors = new Property<ValidationDataErrorInfo<Address>>(
                 values: errors,
-                value: new ValidationDataErrorInfo<Address>(value: null, status: ValidationStatus.None, descendentStatus: null, errors: null, exception: null));
+                value: new ValidationDataErrorInfo<Address>(value: null, status: ValidationStatus.None));
             AddToDisposables(Street, City, Zip, Errors);
         }
 
         public Revertible<string> Street { get; }
         public Revertible<string> City { get; }
         public Revertible<string> Zip { get; }
-        public IReadOnlyProperty<IValidationDataErrorInfo<Address>> Errors { get; }
         public IReadOnlyProperty<bool> HasChanges { get; }
+        public IReadOnlyProperty<IValidationDataErrorInfo<Address>> Errors { get; }
         IReadOnlyProperty<IValidationDataErrorInfo> IValidate.Errors => Errors;
 
         public void AcceptChanges() {

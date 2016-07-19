@@ -12,20 +12,20 @@ namespace Client {
         public Person() {
             Address = new Address();
             FirstName = new Revertible<string>(
-                defaultValue: string.Empty,
+                value: string.Empty,
                 validator: new StringValidator(isRequired: true, minLength: 3, maxLength: 10).Validate);
             LastName = new Revertible<string>(
-                defaultValue: string.Empty,
+                value: string.Empty,
                 validator: new StringValidator(isRequired: true, minLength: 3, maxLength: 10).Validate);
             FullName = new Property<string>(
                 value: string.Empty,
                 values: Observable.CombineLatest(FirstName, LastName, (f, l) => $"{f} {l}"));
-            IsMarried = new Revertible<bool>(defaultValue: false);
+            IsMarried = new Revertible<bool>(value: false);
             MarriageYear = new Revertible<int>(
-                defaultValue: 2000,
+                value: 2000,
                 validator: new RangeValidator<int>(minimum: 1900, maximum: DateTime.Now.Year).Validate);
             Website = new Revertible<string>(
-                defaultValue: "www.google.com",
+                value: "www.google.com",
                 asyncValidator: (values) => {
                     return
                         values
@@ -33,21 +33,15 @@ namespace Client {
                         .Select(i => {
                             bool isOk = string.IsNullOrWhiteSpace(i) || i.ToLower().EndsWith(".com");
                             string[] errors = isOk ? new string[] { } : new string[] { "Does not end with .com but should" };
-                            ValidationDataErrorInfo<string> errorInfo = new ValidationDataErrorInfo<string>(
-                                value: i,
-                                status: isOk ? ValidationStatus.IsValid : ValidationStatus.HasErrors,
-                                descendentStatus: null,
-                                errors: errors,
-                                exception: null);
-                            return errorInfo;
+                            return new ValidationDataErrorInfo<string>(value: i, errors: errors);
                         })
                         .ObserveOnDispatcher();
                 });
             NicknameToAdd = new Revertible<string>(
-                defaultValue: string.Empty,
+                value: string.Empty,
                 validator: new StringValidator(isRequired: true, minLength: 3).Validate);
             Nicknames = new Revertible<ImmutableList<NicknameReport>>(
-                defaultValue: ImmutableList<NicknameReport>.Empty,
+                value: ImmutableList<NicknameReport>.Empty,
                 validator: (list) => {
                     List<string> errors = new List<string>();
                     if (list == null) {
@@ -77,7 +71,7 @@ namespace Client {
                 },
                 canExecute: NicknameToAdd.Errors.Select(i => i.Status == ValidationStatus.IsValid));
             Errors = new Property<ValidationDataErrorInfo<Person>>(
-                value: new ValidationDataErrorInfo<Person>(value: this, status: ValidationStatus.Blocked, descendentStatus: ValidationStatus.None, errors: null, exception: null),
+                value: new ValidationDataErrorInfo<Person>(value: this, status: ValidationStatus.Blocked, descendentStatus: ValidationStatus.None),
                 values: Observable
                     .CombineLatest(new IValidate[] { Address, FirstName, LastName, FullName, IsMarried, Nicknames, Website }.Select(i => i.Errors))
                     .Select(i => i.Select(j => j.CompositeStatus))
@@ -85,19 +79,16 @@ namespace Client {
                     .Select(i => new ValidationDataErrorInfo<Person>(
                         value: this,
                         status: ValidationStatus.IsValid,
-                        descendentStatus: i,
-                        errors: null,
-                        exception: null)));
+                        descendentStatus: i)));
             // NOTE: Not all properties affect whether can accept the form; subforms like nicknameToAdd!
             HasChanges = new Property<bool>(
                 value: false,
-                values:
-                    Observable
+                values: Observable
                     .CombineLatest(ChangeTrackers().Select(i => i.HasChanges))
                     .Select(i => i.Any(j => j == true)));
             AcceptAll = new DelegateCommand(
                 action: () => { AcceptChanges(); },
-                canExecute: Observable.CombineLatest(Errors, HasChanges, (errs, chg) => chg && errs.HasErrors==false));
+                canExecute: Observable.CombineLatest(Errors, HasChanges, (errs, chg) => chg && errs.HasErrors == false));
             RejectAll = new DelegateCommand(
                 action: () => { RejectChanges(); },
                 canExecute: HasChanges);
