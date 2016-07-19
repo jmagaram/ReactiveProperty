@@ -57,5 +57,11 @@
         <local:ErrorViewer x:Name="nicknameListErrorViewer" HorizontalAlignment="Left" Margin="609,420,0,0" VerticalAlignment="Top" ErrorInfo="{Binding Nicknames.Errors, Mode=OneWay}" Width="420"/>
         <local:ErrorViewer x:Name="homeAddressErrorViewer" HorizontalAlignment="Left" Margin="42,640,0,0" VerticalAlignment="Top" ErrorInfo="{Binding Address.Errors, Mode=OneWay}" Width="496"/>
         <local:ErrorViewer ShowCompositeStatus="True" x:Name="overallErrorViewer" HorizontalAlignment="Left" Margin="333,751,0,0" VerticalAlignment="Top" Width="416" ErrorInfo="{Binding Errors, Mode=OneWay}"/>
+        <Button x:Name="randomCreate" HorizontalAlignment="Left" Margin="364,199,0,0" VerticalAlignment="Top" Command="{Binding GenerateRandomNumber, Mode=OneWay}">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock>Create random</TextBlock>
+                <TextBlock Margin="20,0,0,0" FontWeight="Bold" x:Name="random" HorizontalAlignment="Left" TextWrapping="Wrap" Text="{Binding RandomNumber.Value}" VerticalAlignment="Top"/>
+            </StackPanel>
+        </Button>
     </Grid>
 </Page>

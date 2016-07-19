@@ -1,111 +1,73 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Runtime.CompilerServices;
+using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace Tools {
-    /// <summary>
-    /// From https://msdn.microsoft.com/magazine/dn630647.aspx
-    /// From https://github.com/StephenCleary
-    /// </summary>
-    /// <typeparam name="TResult"></typeparam>
-    public class AsyncCommand<TResult> : AsyncCommandBase, INotifyPropertyChanged {
-        readonly Func<CancellationToken, Task<TResult>> _command;
-        readonly CancelAsyncCommand _cancelCommand;
-        INotifyTaskCompletion<TResult> _execution;
-        IObservable<bool> _canExecute;
-        bool _latestCanExecute;
+    public class AsyncCommand<TResult> : ICommand, IObservable<IObservable<TResult>>, IDisposable {
+        bool _isDisposed;
+        bool _initialCanExecute;
+        Func<CancellationToken, Task<TResult>> _execute;
+        BehaviorSubject<bool> _isExecuting;
+        IDisposable _isExecutingSubscription;
+        Subject<IObservable<TResult>> _results;
 
-        public AsyncCommand(Func<CancellationToken, Task<TResult>> command, IObservable<bool> canExecute = null) {
-            if (command == null) throw new ArgumentNullException(nameof(command));
-            _command = command;
-            _canExecute = canExecute ?? Observable.Return<bool>(true);
-            _latestCanExecute = true;
-            _canExecute
-                .StartWith(true)
+        public AsyncCommand(Func<CancellationToken, Task<TResult>> execute, IObservable<bool> canExecute = null, bool initialCanExecute = true) {
+            _isDisposed = false;
+            _isExecuting = new BehaviorSubject<bool>(false);
+            _results = new Subject<IObservable<TResult>>();
+            _initialCanExecute = initialCanExecute;
+            _execute = execute;
+            _isExecutingSubscription = 
+                _isExecuting
                 .DistinctUntilChanged()
-                .Subscribe(i => {
-                    _latestCanExecute = i;
-                    RaiseCanExecuteChanged();
-                });
-            _cancelCommand = new CancelAsyncCommand();
+                .Subscribe(i => { OnCanExecuteChanged(EventArgs.Empty); });
         }
 
-        public override bool CanExecute(object parameter) => _latestCanExecute && (Execution == null || Execution.IsCompleted);
+        public event EventHandler CanExecuteChanged;
 
-        public override async Task ExecuteAsync(object parameter) {
-            _cancelCommand.NotifyCommandStarting();
-            Execution = NotifyTaskCompletion.Create<TResult>(_command(_cancelCommand.Token));
-            RaiseCanExecuteChanged();
-            await Execution.TaskCompleted;
-            _cancelCommand.NotifyCommandFinished();
-            RaiseCanExecuteChanged();
+        public bool CanExecute(object parameter) =>
+            _isExecuting
+            .MostRecent(_initialCanExecute)
+            .Select(i => !i)
+            .First();
+
+        protected virtual void OnCanExecuteChanged(EventArgs args) => CanExecuteChanged?.Invoke(this, args);
+
+        public void Dispose() {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
-        public ICommand CancelCommand => _cancelCommand;
+        public IObservable<bool> IsExecuting => _isExecuting.AsObservable();
 
-        public INotifyTaskCompletion<TResult> Execution
-        {
-            get { return _execution; }
-            private set
-            {
-                _execution = value;
-                OnPropertyChanged();
-            }
+        public IObservable<TResult> Execute(object parameter) {
+            var result = Observable
+                .Return(default(TResult))
+                .Do((_) => _isExecuting.OnNext(true))
+                .Concat(Observable.FromAsync(_execute))
+                .Skip(1)
+                .Finally(() => _isExecuting.OnNext(false));
+            _results.OnNext(result);
+            return result;
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        void ICommand.Execute(object parameter) => Execute(null);
 
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-
-        private sealed class CancelAsyncCommand : ICommand {
-            private CancellationTokenSource _cts = new CancellationTokenSource();
-            private bool _commandExecuting;
-
-            public CancellationToken Token => _cts.Token;
-
-            public void NotifyCommandStarting() {
-                _commandExecuting = true;
-                if (!_cts.IsCancellationRequested)
-                    return;
-                _cts = new CancellationTokenSource();
-                RaiseCanExecuteChanged();
+        protected virtual void Dispose(bool disposing) {
+            if (_isDisposed)
+                return;
+            if (disposing) {
+                _isExecutingSubscription.Dispose();
+                _isExecuting.Dispose();
+                _results.Dispose();
             }
-
-            public void NotifyCommandFinished() {
-                _commandExecuting = false;
-                RaiseCanExecuteChanged();
-            }
-
-            bool ICommand.CanExecute(object parameter) => _commandExecuting && !_cts.IsCancellationRequested;
-
-            void ICommand.Execute(object parameter) {
-                _cts.Cancel();
-                RaiseCanExecuteChanged();
-            }
-
-            public event EventHandler CanExecuteChanged;
-
-            private void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+            _isDisposed = true;
         }
-    }
 
-    public static class AsyncCommand {
-        public static AsyncCommand<object> Create(Func<Task> command) => 
-            new AsyncCommand<object>(async _ => { await command(); return null; });
-
-        public static AsyncCommand<TResult> Create<TResult>(Func<Task<TResult>> command) => 
-            new AsyncCommand<TResult>(_ => command());
-
-        public static AsyncCommand<object> Create(Func<CancellationToken, Task> command) => 
-            new AsyncCommand<object>(async token => { await command(token); return null; });
-
-        public static AsyncCommand<TResult> Create<TResult>(Func<CancellationToken, Task<TResult>> command) => 
-            new AsyncCommand<TResult>(command);
+        public IDisposable Subscribe(IObserver<IObservable<TResult>> observer) => _results.Subscribe(observer);
     }
 }

@@ -5,11 +5,35 @@ using Tools;
 using System.Reactive.Linq;
 using System.Windows.Input;
 using System.Collections.Immutable;
+using System.Threading.Tasks;
+using System.Reactive;
 
-//Model, IValidate<Address>, IRevertible
 namespace Client {
     public class Person : Model, IRevertible, IValidate<Person> {
         public Person() {
+            GenerateRandomNumber = new AsyncCommand<int>(
+                execute: async (token) => {
+                    Random r = new Random();
+                    await Task.Delay(TimeSpan.FromSeconds(r.Next(0, 5)));
+                    if (r.Next() % 3 == 0) {
+                        throw new InvalidOperationException("Weird unexpected error!");
+                    }
+                    else {
+                        return new Random().Next(0, 100);
+                    }
+                },
+                canExecute: null,
+                initialCanExecute: true);
+            RandomNumber = new Property<string>(
+                value: string.Empty,
+                values:
+                    GenerateRandomNumber
+                    .SelectMany(i => i
+                        .Materialize()
+                        .Where(j => j.Kind == NotificationKind.OnNext || j.Kind == NotificationKind.OnError)
+                        .Select(j => j.Kind == NotificationKind.OnError ? "error" : j.Value.ToString()))
+                    .Select(i => i.ToString())
+                    .ObserveOnDispatcher());
             Address = new Address();
             FirstName = new Revertible<string>(
                 value: string.Empty,
@@ -116,6 +140,9 @@ namespace Client {
             yield return Nicknames;
             yield return Website;
         }
+
+        public Property<string> RandomNumber { get; }
+        public AsyncCommand<int> GenerateRandomNumber { get; }
 
         public Revertible<string> FirstName { get; }
         public Revertible<string> LastName { get; }
