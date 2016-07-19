@@ -1,33 +1,51 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace Tools {
-    public class DelegateCommand : ICommand {
+    public class DelegateCommand : ICommand, IDisposable {
         Action _action;
-        bool _latestCanExecute;
+        bool _canExecute;
+        CompositeDisposable _disposables;
+        bool _isDisposed;
 
-        public DelegateCommand(Action action, IObservable<bool> canExecute = null) {
+        public DelegateCommand(Action action, bool defaultCanExecute = true, IObservable<bool> canExecute = null) {
+            if (action == null) throw new ArgumentNullException(nameof(action));
+            _disposables = new CompositeDisposable();
             _action = action;
-            _latestCanExecute = true;
+            _canExecute = defaultCanExecute;
             if (canExecute != null) {
-                canExecute.DistinctUntilChanged().Subscribe((bool i) => {
-                    _latestCanExecute = i;
-                    OnCanExecuteChanged(EventArgs.Empty);
-                });
+                canExecute
+                    .DistinctUntilChanged() // ObserveOn?
+                    .Subscribe(i => {
+                        _canExecute = i;
+                        OnCanExecuteChanged(EventArgs.Empty);
+                    })
+                    .AddTo(_disposables);
             }
         }
 
         public event EventHandler CanExecuteChanged;
 
-        public bool CanExecute(object parameter) => _latestCanExecute;
+        public bool CanExecute(object parameter) => _canExecute;
 
         public void Execute(object parameter) => _action();
 
         protected virtual void OnCanExecuteChanged(EventArgs args) => CanExecuteChanged?.Invoke(this, args);
+
+        public void Dispose() {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing) {
+            if (_isDisposed)
+                return;
+            if (disposing) {
+                _disposables.Dispose();
+            }
+            _isDisposed = true;
+        }
     }
 }
