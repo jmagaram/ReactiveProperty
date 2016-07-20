@@ -10,9 +10,9 @@ namespace Client {
     //    Parent could listen for individual pieces though 
     public class Address : Model, IValidate<Address>, IRevertible {
         public Address() {
-            Street = new Revertible<string>(value: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
-            City = new Revertible<string>(value: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
-            Zip = new Revertible<string>(value: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
+            Street = new Revertible<string>(initialValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
+            City = new Revertible<string>(initialValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
+            Zip = new Revertible<string>(initialValue: string.Empty, validator: new StringValidator(isRequired: true, minLength: 3).Validate);
             HasChanges = new Property<bool>(values: Observable.CombineLatest(ChangeTrackers().Select(i => i.HasChanges)).Select(i => i.Contains(true)));
             var errors = Observable
                 .CombineLatest(Street.Errors, City.Errors, Zip.Errors, (s, c, z) => new { Street = s, City = c, Zip = z })
@@ -32,7 +32,7 @@ namespace Client {
                 });
             Errors = new Property<ValidationDataErrorInfo<Address>>(
                 values: errors,
-                value: new ValidationDataErrorInfo<Address>(value: null, status: ValidationStatus.None));
+                initialValue: new ValidationDataErrorInfo<Address>(value: null, status: ValidationStatus.None));
             AddToDisposables(Street, City, Zip, Errors);
         }
 

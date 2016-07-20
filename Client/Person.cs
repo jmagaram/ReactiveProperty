@@ -22,10 +22,10 @@ namespace Client {
                         return new Random().Next(0, 100);
                     }
                 },
-                canExecute: null,
+                canExecute: Observable.Interval(TimeSpan.FromSeconds(3)).Select(i => i % 2 == 0),
                 initialCanExecute: true);
             RandomNumber = new Property<string>(
-                value: string.Empty,
+                initialValue: string.Empty,
                 values:
                     GenerateRandomNumber
                     .SelectMany(i => i
@@ -36,20 +36,20 @@ namespace Client {
                     .ObserveOnDispatcher());
             Address = new Address();
             FirstName = new Revertible<string>(
-                value: string.Empty,
+                initialValue: string.Empty,
                 validator: new StringValidator(isRequired: true, minLength: 3, maxLength: 10).Validate);
             LastName = new Revertible<string>(
-                value: string.Empty,
+                initialValue: string.Empty,
                 validator: new StringValidator(isRequired: true, minLength: 3, maxLength: 10).Validate);
             FullName = new Property<string>(
-                value: string.Empty,
+                initialValue: string.Empty,
                 values: Observable.CombineLatest(FirstName, LastName, (f, l) => $"{f} {l}"));
-            IsMarried = new Revertible<bool>(value: false);
+            IsMarried = new Revertible<bool>(initialValue: false);
             MarriageYear = new Revertible<int>(
-                value: 2000,
+                initialValue: 2000,
                 validator: new RangeValidator<int>(minimum: 1900, maximum: DateTime.Now.Year).Validate);
             Website = new Revertible<string>(
-                value: "www.google.com",
+                initialValue: "www.google.com",
                 asyncValidator: (values) => {
                     return
                         values
@@ -62,10 +62,10 @@ namespace Client {
                         .ObserveOnDispatcher();
                 });
             NicknameToAdd = new Revertible<string>(
-                value: string.Empty,
+                initialValue: string.Empty,
                 validator: new StringValidator(isRequired: true, minLength: 3).Validate);
             Nicknames = new Revertible<ImmutableList<NicknameReport>>(
-                value: ImmutableList<NicknameReport>.Empty,
+                initialValue: ImmutableList<NicknameReport>.Empty,
                 validator: (list) => {
                     List<string> errors = new List<string>();
                     if (list == null) {
@@ -95,7 +95,7 @@ namespace Client {
                 },
                 canExecute: NicknameToAdd.Errors.Select(i => i.Status == ValidationStatus.IsValid));
             Errors = new Property<ValidationDataErrorInfo<Person>>(
-                value: new ValidationDataErrorInfo<Person>(value: this, status: ValidationStatus.Blocked, descendentStatus: ValidationStatus.None),
+                initialValue: new ValidationDataErrorInfo<Person>(value: this, status: ValidationStatus.Blocked, descendentStatus: ValidationStatus.None),
                 values: Observable
                     .CombineLatest(new IValidate[] { Address, FirstName, LastName, FullName, IsMarried, Nicknames, Website }.Select(i => i.Errors))
                     .Select(i => i.Select(j => j.CompositeStatus))
@@ -106,7 +106,7 @@ namespace Client {
                         descendentStatus: i)));
             // NOTE: Not all properties affect whether can accept the form; subforms like nicknameToAdd!
             HasChanges = new Property<bool>(
-                value: false,
+                initialValue: false,
                 values: Observable
                     .CombineLatest(ChangeTrackers().Select(i => i.HasChanges))
                     .Select(i => i.Any(j => j == true)));

@@ -9,10 +9,10 @@ namespace Tools {
         PropertyBase<IValidationDataErrorInfo<T>> _errors;
 
         public Property(
-            T value = default(T),
+            T initialValue = default(T),
             IObservable<T> values = null,
             Func<T, IEnumerable> validator = null,
-            Func<IObservable<T>, IObservable<IValidationDataErrorInfo<T>>> asyncValidator = null) : base(value) {
+            Func<IObservable<T>, IObservable<IValidationDataErrorInfo<T>>> asyncValidator = null) : base(initialValue) {
             if (values != null) {
                 values
                 .Subscribe(i => Value = i)

@@ -5,11 +5,11 @@ using System.Reactive.Linq;
 namespace Tools {
     public class Revertible<TValue> : Property<TValue>, IRevertible {
         public Revertible(
-            TValue value = default(TValue),
+            TValue initialValue = default(TValue),
             Func<IObservable<TValue>, IObservable<ValidationDataErrorInfo<TValue>>> asyncValidator = null,
             Func<TValue, IEnumerable> validator = null)
-            : base(value: value, validator: validator, asyncValidator: asyncValidator) {
-            Original = new Property<TValue>(value: value);
+            : base(initialValue: initialValue, validator: validator, asyncValidator: asyncValidator) {
+            Original = new Property<TValue>(initialValue: initialValue);
             HasChanges = new Property<bool>(values: Observable.CombineLatest(Original, Values, (o, c) => !Equals(o, c)));
             AddToDisposables(Original, HasChanges);
         }
