@@ -11,8 +11,8 @@ using System.Reactive;
 namespace Client {
     public class Person : Model, IRevertible, IValidate<Person> {
         public Person() {
-            GenerateRandomNumber = new AsyncCommand<int>(
-                execute: async (token) => {
+            GenerateRandomNumber = new AsyncCommand<object, int>(
+                execute: async (token, parameter) => {
                     Random r = new Random();
                     await Task.Delay(TimeSpan.FromSeconds(r.Next(0, 5)));
                     if (r.Next() % 3 == 0) {
@@ -22,7 +22,7 @@ namespace Client {
                         return new Random().Next(0, 100);
                     }
                 },
-                canExecute: Observable.Interval(TimeSpan.FromSeconds(3)).Select(i => i % 2 == 0),
+                canExecute: null,
                 initialCanExecute: true);
             RandomNumber = new Property<string>(
                 initialValue: string.Empty,
@@ -142,8 +142,7 @@ namespace Client {
         }
 
         public Property<string> RandomNumber { get; }
-        public AsyncCommand<int> GenerateRandomNumber { get; }
-
+        public AsyncCommand<object, int> GenerateRandomNumber { get; }
         public Revertible<string> FirstName { get; }
         public Revertible<string> LastName { get; }
         public Property<string> FullName { get; }

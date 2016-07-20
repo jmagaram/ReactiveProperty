@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace Tools {
-    public class AsyncCommand<TResult> : ICommand, IObservable<IObservable<TResult>>, IDisposable {
+    public class AsyncCommand<TParameter, TResult> : ICommand, IObservable<IObservable<TResult>>, IDisposable {
         bool _isDisposed;
-        Func<CancellationToken, Task<TResult>> _execute;
+        Func<CancellationToken, TParameter, Task<TResult>> _execute;
         BehaviorSubject<bool> _isExecuting;
         IObservable<bool> _canExecute;
         bool _latestCanExecute = false;
@@ -18,8 +18,7 @@ namespace Tools {
         IDisposable _canExecuteSubscription;
         Subject<IObservable<TResult>> _results;
 
-        public AsyncCommand(Func<CancellationToken, Task<TResult>> execute, IObservable<bool> canExecute = null, bool initialCanExecute = true) {
-            var logger = new DelegateLogger(i => Debug.WriteLine(i));
+        public AsyncCommand(Func<CancellationToken, TParameter, Task<TResult>> execute, IObservable<bool> canExecute = null, bool initialCanExecute = true) {
             _isDisposed = false;
             _isExecuting = new BehaviorSubject<bool>(false);
             _canExecute = Observable.CombineLatest(canExecute?.StartWith(initialCanExecute) ?? Observable.Return(true), _isExecuting, (canEx, isEx) => canEx && !isEx).Publish().RefCount();
@@ -51,32 +50,18 @@ namespace Tools {
 
         public IObservable<bool> IsExecuting => _isExecuting.AsObservable();
 
-        public IObservable<TResult> Execute(object parameter) {
-            //Func<CancellationToken, object, Task<TResult>> provided = null;
-            //Func<CancellationToken, Task<TResult>> needed = (token) => provided(token,parameter);
-            // For value types, ensure that null is coerced to a sensible default
-            //if (parameter == null) {
-            //    parameter = default(TParameter);
-            //}
-            //if (parameter != null && !(parameter is TParameter)) {
-            //    throw new ArgumentException(
-            //        paramName: nameof(parameter),
-            //        message: $"Must be of type {typeof(TParameter).FullName} but received type {parameter.GetType().FullName}.");
-            //}
-            //Execute((TParameter)parameter)
-            //    .Catch(Observable.Empty<TResult>())
-            //    .Subscribe();
+        public IObservable<TResult> Execute(TParameter parameter) {
             var result = Observable
                 .Return(default(TResult))
                 .Do((_) => _isExecuting.OnNext(true))
-                .Concat(Observable.FromAsync(_execute))
+                .Concat(Observable.FromAsync(token => _execute(token, parameter)))
                 .Skip(1)
                 .Finally(() => _isExecuting.OnNext(false));
             _results.OnNext(result);
             return result;
         }
 
-        void ICommand.Execute(object parameter) => Execute(null);
+        void ICommand.Execute(object parameter) => Execute(parameter == null ? default(TParameter) : (TParameter)parameter);
 
         protected virtual void Dispose(bool disposing) {
             if (_isDisposed)
