@@ -10,11 +10,11 @@ namespace Tools {
         CompositeDisposable _disposables;
         bool _isDisposed;
 
-        public DelegateCommand(Action action, bool defaultCanExecute = true, IObservable<bool> canExecute = null) {
+        public DelegateCommand(Action action, bool initialCanExecute = true, IObservable<bool> canExecute = null) {
             if (action == null) throw new ArgumentNullException(nameof(action));
             _disposables = new CompositeDisposable();
             _action = action;
-            _canExecute = defaultCanExecute;
+            _canExecute = initialCanExecute;
             if (canExecute != null) {
                 canExecute
                     .DistinctUntilChanged() // ObserveOn?

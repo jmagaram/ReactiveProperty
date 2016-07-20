@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
@@ -14,27 +15,25 @@ namespace Tools {
         BehaviorSubject<bool> _isExecuting;
         IObservable<bool> _canExecute;
         bool _latestCanExecute = false;
-        IDisposable _isExecutingSubscription;
-        IDisposable _canExecuteSubscription;
         Subject<IObservable<TResult>> _results;
+        CompositeDisposable _disposables;
 
         public AsyncCommand(Func<CancellationToken, TParameter, Task<TResult>> execute, IObservable<bool> canExecute = null, bool initialCanExecute = true) {
+            _disposables = new CompositeDisposable();
             _isDisposed = false;
             _isExecuting = new BehaviorSubject<bool>(false);
-            _canExecute = Observable.CombineLatest(canExecute?.StartWith(initialCanExecute) ?? Observable.Return(true), _isExecuting, (canEx, isEx) => canEx && !isEx).Publish().RefCount();
-            _canExecuteSubscription =
-                _canExecute
+            _isExecuting.AddTo(_disposables);
+            _canExecute = Observable.CombineLatest(canExecute?.StartWith(initialCanExecute) ?? Observable.Return(true), _isExecuting, (canEx, isEx) => canEx && !isEx);
+            _canExecute
                 .DistinctUntilChanged()
                 .Subscribe(i => {
                     _latestCanExecute = i;
                     OnCanExecuteChanged(EventArgs.Empty);
-                });
+                })
+                .AddTo(_disposables);
             _results = new Subject<IObservable<TResult>>();
+            _results.AddTo(_disposables);
             _execute = execute;
-            _isExecutingSubscription =
-                _isExecuting
-                .DistinctUntilChanged()
-                .Subscribe(i => { OnCanExecuteChanged(EventArgs.Empty); });
         }
 
         public event EventHandler CanExecuteChanged;
@@ -63,18 +62,15 @@ namespace Tools {
 
         void ICommand.Execute(object parameter) => Execute(parameter == null ? default(TParameter) : (TParameter)parameter);
 
+        public IDisposable Subscribe(IObserver<IObservable<TResult>> observer) => _results.Subscribe(observer);
+
         protected virtual void Dispose(bool disposing) {
             if (_isDisposed)
                 return;
             if (disposing) {
-                _isExecutingSubscription.Dispose();
-                _isExecuting.Dispose();
-                _results.Dispose();
-                _canExecuteSubscription.Dispose();
+                _disposables.Dispose();
             }
             _isDisposed = true;
         }
-
-        public IDisposable Subscribe(IObserver<IObservable<TResult>> observer) => _results.Subscribe(observer);
     }
 }

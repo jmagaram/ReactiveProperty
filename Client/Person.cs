@@ -22,7 +22,7 @@ namespace Client {
                         return new Random().Next(0, 100);
                     }
                 },
-                canExecute: null,
+                canExecute: Observable.Interval(TimeSpan.FromSeconds(3)).Select(i=>i%2==0),
                 initialCanExecute: true);
             RandomNumber = new Property<string>(
                 initialValue: string.Empty,
