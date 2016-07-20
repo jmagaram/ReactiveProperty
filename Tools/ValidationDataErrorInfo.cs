@@ -21,7 +21,7 @@ namespace Tools {
 
         public ValidationDataErrorInfo(T value, IEnumerable errors) : this(
             value: value,
-            status: (errors == null || errors.Cast<object>().Any()) ? ValidationStatus.HasErrors : ValidationStatus.IsValid,
+            status: (errors == null || !errors.Cast<object>().Any()) ? ValidationStatus.IsValid: ValidationStatus.HasErrors,
             descendentStatus: null,
             errors: errors,
             exception: null) {

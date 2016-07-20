@@ -35,7 +35,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AsyncCommand.cs" />
-    <Compile Include="Command.cs" />
     <Compile Include="DelegateCommand.cs" />
     <Compile Include="DelegateLogger.cs" />
     <Compile Include="Experiment.cs" />

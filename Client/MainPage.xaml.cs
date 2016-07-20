@@ -29,8 +29,6 @@ namespace Client {
             base.OnNavigatedTo(e);
             if (!DesignMode.DesignModeEnabled) {
                 _person = new Person();
-                _person.FirstName.Value = "Justin";
-                _person.LastName.Value = "Magaram";
                 DataContext = _person;
             }
         }

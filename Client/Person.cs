@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using System.Reactive;
+using System.Diagnostics;
 
 namespace Client {
     public class Person : Model, IRevertible, IValidate<Person> {
@@ -22,18 +23,18 @@ namespace Client {
                         return new Random().Next(0, 100);
                     }
                 },
-                canExecute: Observable.Interval(TimeSpan.FromSeconds(3)).Select(i=>i%2==0),
+                canExecute: null,
                 initialCanExecute: true);
             RandomNumber = new Property<string>(
                 initialValue: string.Empty,
-                values:
+                values: // Gets values from async output of the AsyncCommand
                     GenerateRandomNumber
                     .SelectMany(i => i
-                        .Materialize()
+                        .Materialize() // Don't throw on errors; display them
                         .Where(j => j.Kind == NotificationKind.OnNext || j.Kind == NotificationKind.OnError)
                         .Select(j => j.Kind == NotificationKind.OnError ? "error" : j.Value.ToString()))
                     .Select(i => i.ToString())
-                    .ObserveOnDispatcher());
+                    .ObserveOnDispatcher()); // This is a hack. Need to pass IScheduler to PropertyBase<T>
             Address = new Address();
             FirstName = new Revertible<string>(
                 initialValue: string.Empty,
@@ -53,7 +54,7 @@ namespace Client {
                 asyncValidator: (values) => {
                     return
                         values
-                        .Throttle(TimeSpan.FromSeconds(3))
+                        .Throttle(TimeSpan.FromSeconds(3)) // Don't validate on every keystroke
                         .Select(i => {
                             bool isOk = string.IsNullOrWhiteSpace(i) || i.ToLower().EndsWith(".com");
                             string[] errors = isOk ? new string[] { } : new string[] { "Does not end with .com but should" };
@@ -94,17 +95,17 @@ namespace Client {
                     NicknameToAdd.Value = string.Empty;
                 },
                 canExecute: NicknameToAdd.Errors.Select(i => i.Status == ValidationStatus.IsValid));
+            var logger = new DelegateLogger(i => Debug.WriteLine(i));
             Errors = new Property<ValidationDataErrorInfo<Person>>(
                 initialValue: new ValidationDataErrorInfo<Person>(value: this, status: ValidationStatus.Blocked, descendentStatus: ValidationStatus.None),
                 values: Observable
-                    .CombineLatest(new IValidate[] { Address, FirstName, LastName, FullName, IsMarried, Nicknames, Website }.Select(i => i.Errors))
+                    .CombineLatest(new IValidate[] { Address, FirstName, LastName, FullName, Nicknames, Website }.Select(i => i.Errors))
                     .Select(i => i.Select(j => j.CompositeStatus))
                     .Select(i => i.Aggregate((a, b) => a | b))
                     .Select(i => new ValidationDataErrorInfo<Person>(
                         value: this,
                         status: ValidationStatus.IsValid,
                         descendentStatus: i)));
-            // NOTE: Not all properties affect whether can accept the form; subforms like nicknameToAdd!
             HasChanges = new Property<bool>(
                 initialValue: false,
                 values: Observable
